@@ -1,0 +1,21 @@
+# Memory Service Requirements
+fastapi>=0.104.0
+hypercorn>=0.15.0
+httpx>=0.25.0
+sqlalchemy>=2.0.0
+asyncpg>=0.29.0
+psycopg2-binary>=2.9.0
+pgvector>=0.4.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+numpy>=1.24.0
+python-jose[cryptography]>=3.3.0
+pyjwt>=2.8.0
+mcp>=0.1.0
+python-dotenv>=1.0.0
+
+# Testing Requirements
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+pytest-mock>=3.11.0
