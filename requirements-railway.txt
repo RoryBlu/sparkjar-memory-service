@@ -15,4 +15,5 @@ python-dotenv>=1.0.0
 redis>=5.0.0
 
 # Install sparkjar-shared from GitHub Packages
-sparkjar-shared @ git+https://github.com/YOUR_ORG/sparkjar-shared.git@v0.1.0
+# sparkjar-shared @ git+https://github.com/YOUR_ORG/sparkjar-shared.git@v0.1.0
+# TODO: Uncomment above line after creating sparkjar-shared repo
