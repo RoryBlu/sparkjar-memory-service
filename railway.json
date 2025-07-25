@@ -1,0 +1,52 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "NIXPACKS",
+    "buildCommand": "pip install -r requirements-railway.txt"
+  },
+  "deploy": {
+    "startCommand": "uvicorn internal-api-with-validation:app --host 0.0.0.0 --port ${PORT:-8001}",
+    "healthcheckPath": "/health",
+    "healthcheckTimeout": 30,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 3
+  },
+  "variables": {
+    "PORT": {
+      "default": "8001",
+      "description": "Port for the memory service"
+    },
+    "DATABASE_URL": {
+      "required": true,
+      "description": "PostgreSQL connection string"
+    },
+    "DATABASE_URL_DIRECT": {
+      "required": true,
+      "description": "Direct PostgreSQL connection (non-pooled)"
+    },
+    "JWT_SECRET_KEY": {
+      "required": true,
+      "description": "Secret key for JWT authentication"
+    },
+    "API_SECRET_KEY": {
+      "required": true,
+      "description": "API secret key for internal auth"
+    },
+    "REDIS_URL": {
+      "required": false,
+      "description": "Redis connection URL (optional for caching)"
+    },
+    "ENVIRONMENT": {
+      "default": "production",
+      "description": "Environment (development/staging/production)"
+    },
+    "LOG_LEVEL": {
+      "default": "INFO",
+      "description": "Logging level"
+    },
+    "PYTHONPATH": {
+      "default": "/app",
+      "description": "Python path for imports"
+    }
+  }
+}
