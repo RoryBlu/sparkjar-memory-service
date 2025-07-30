@@ -90,9 +90,11 @@ API_SECRET_KEY=your-secret-key
 OPENAI_API_KEY=your-openai-key
 
 # Embeddings
-EMBEDDING_PROVIDER=custom
-EMBEDDINGS_API_URL=http://embeddings.railway.internal:8000
+EMBEDDING_PROVIDER=openai
+OPENAI_EMBEDDING_MODEL=text-embedding-3-small
 ```
+
+See `.env.example` for the complete set of variables and default values.
 
 ## Development
 
