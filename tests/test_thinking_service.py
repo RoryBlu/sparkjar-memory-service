@@ -10,13 +10,12 @@ import sys
 import os
 
 from services.thinking_service import ThinkingService
-# TODO: Fix import - schemas should be defined locally
-# from sparkjar_crew.shared.schemas.thinking_schemas import ...
+from sparkjar_shared.schemas.thinking_schemas import (
     CreateSessionRequest,
     AddThoughtRequest,
     ReviseThoughtRequest,
     CompleteSessionRequest,
-    AbandonSessionRequest
+    AbandonSessionRequest,
 )
 
 @pytest.fixture

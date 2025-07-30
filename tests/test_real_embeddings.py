@@ -8,8 +8,7 @@ import pytest
 import sys
 import os
 
-# TODO: Fix import - schemas should be defined locally
-# from sparkjar_crew.shared.schemas.memory_schemas import ...
+from sparkjar_shared.schemas.memory_schemas import EntityCreate
 
 class TestRealEmbeddings:
     """Integration tests that verify real embedding service works"""

@@ -44,8 +44,7 @@ class MCPComplianceValidator(BaseValidator):
             import sys
             # Use proper package imports - no sys.path manipulation needed
             try:
-                # TODO: Fix import - MCP server should be local
-# from mcp_server import ...
+                from mcp_server import MemoryMCPServer
             except ImportError:
                 # Fallback for development
                 from pathlib import Path

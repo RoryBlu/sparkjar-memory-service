@@ -11,8 +11,7 @@ from datetime import datetime
 import sys
 import os
 
-# TODO: Fix import - schemas should be defined locally
-# from sparkjar_crew.shared.schemas.memory_schemas import ...
+from sparkjar_shared.schemas.memory_schemas import EntityCreate
 
 class TestMemoryManager:
     """Test suite for MemoryManager"""
