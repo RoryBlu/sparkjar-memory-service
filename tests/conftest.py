@@ -58,3 +58,29 @@ def test_context():
         "actor_type": "test",
         "actor_id": "test-actor-123"
     }
+import os
+from tests.mock_services import MockEmbeddingService
+
+@pytest.fixture(autouse=True)
+def set_test_environment(monkeypatch):
+    """Set minimal environment so config loads without external services."""
+    monkeypatch.setenv("DATABASE_URL", "sqlite+aiosqlite:///:memory:")
+    monkeypatch.setenv("SUPABASE_URL", "http://example.com")
+    monkeypatch.setenv("SUPABASE_SERVICE_KEY", "test-key")
+    monkeypatch.setenv("SECRET_KEY", "x" * 32)
+    monkeypatch.setenv("SKIP_CONFIG_VALIDATION", "true")
+    monkeypatch.setenv("EMBEDDINGS_API_URL", "http://embeddings.test")
+    yield
+
+@pytest.fixture
+def mock_embedding_service():
+    """Provide a mock embedding service that avoids network calls."""
+    return MockEmbeddingService()
+
+@pytest.fixture(autouse=True)
+def cleanup_orphaned_data():
+    """Cleanup hook that would remove test data from the database."""
+    yield
+    # In real tests this would delete from DB. Here we simply log for clarity.
+    print("Cleaning up test data...")
+

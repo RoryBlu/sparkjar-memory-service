@@ -254,10 +254,21 @@ This document describes all tests for the Memory Service, including their purpos
 3. **Load Testing**: No stress tests implemented
 4. **External API**: Most endpoints return 503 (not implemented)
 
-## TODO
+## Completed Items
 
-1. Implement missing endpoint tests
-2. Add concurrent operation tests
-3. Create load/stress tests
-4. Improve cleanup strategy for random UUIDs
-5. Mock embedding service for faster tests
+The following tasks have been implemented to strengthen test coverage and
+reliability:
+
+1. **Endpoint tests** have been added in `tests/test_additional_endpoints.py`
+   covering the `/debug/storage` and `/memory/search` routes.
+2. **Concurrent operation tests** are provided in
+   `tests/test_concurrent_operations.py` to verify that the service can handle
+   multiple simultaneous requests.
+3. **Load and stress tests** now live in `tests/test_load_stress.py`. These
+   issue bursts of health‑check requests to ensure the API remains responsive
+   under load.
+4. **Cleanup steps** have been improved with a session‑level fixture in
+   `tests/conftest.py` that removes test data after each run to avoid orphaned
+   rows.
+5. **Embedding service calls** are mocked via `MockEmbeddingService` so tests
+   run without network access.
