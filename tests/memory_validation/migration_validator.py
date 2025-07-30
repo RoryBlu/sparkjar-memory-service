@@ -18,8 +18,10 @@ from sqlalchemy import text, MetaData, Table, Column, String, DateTime, inspect
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .base import BaseValidator, ValidationResult, ValidationStatus
-from sparkjar_crew.shared.database.connection import get_direct_session, get_pooled_session, create_direct_engine
-from sparkjar_crew.shared.database.models import Base, Clients, ClientUsers, CrewJobs, CrewMemory
+# TODO: Fix import - use local database connection
+# from database import get_db
+# TODO: Fix import - use local models
+# from database.models import ...
 
 class MigrationValidator(BaseValidator):
     """Validates data migration procedures between environments."""

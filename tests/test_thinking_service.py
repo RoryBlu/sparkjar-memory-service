@@ -10,7 +10,8 @@ import sys
 import os
 
 from services.thinking_service import ThinkingService
-from sparkjar_crew.shared.schemas.thinking_schemas import (
+# TODO: Fix import - schemas should be defined locally
+# from sparkjar_crew.shared.schemas.thinking_schemas import ...
     CreateSessionRequest,
     AddThoughtRequest,
     ReviseThoughtRequest,

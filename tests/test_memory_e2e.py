@@ -16,7 +16,8 @@ TEST_ACTOR_ID = uuid4()
 @pytest.mark.asyncio
 async def test_complete_entity_lifecycle(memory_manager, test_context):
     """Test complete entity lifecycle: create, update, search, delete"""
-    from sparkjar_crew.shared.schemas.memory_schemas import EntityCreate, Observation, ObservationAdd, ObservationContent
+    # TODO: Fix import - schemas should be defined locally
+# from sparkjar_crew.shared.schemas.memory_schemas import ...
     
     # Step 1: Create entities with observations
     entities_data = [
@@ -127,7 +128,8 @@ async def test_complete_entity_lifecycle(memory_manager, test_context):
     assert any(r["entity_name"] == "Alice Johnson" for r in search_results)
     
     # Step 4: Create relationships
-    from sparkjar_crew.shared.schemas.memory_schemas import RelationCreate
+    # TODO: Fix import - schemas should be defined locally
+# from sparkjar_crew.shared.schemas.memory_schemas import ...
     
     relations = [
         RelationCreate(
@@ -224,7 +226,8 @@ async def test_conversation_memory_extraction(memory_manager, test_context):
 @pytest.mark.asyncio
 async def test_complex_graph_operations(memory_manager, test_context):
     """Test complex graph operations with multiple entities and relations"""
-    from sparkjar_crew.shared.schemas.memory_schemas import EntityCreate, Observation, RelationCreate
+    # TODO: Fix import - schemas should be defined locally
+# from sparkjar_crew.shared.schemas.memory_schemas import ...
     
     # Create a network of entities
     entities = []
@@ -298,7 +301,8 @@ async def test_complex_graph_operations(memory_manager, test_context):
 @pytest.mark.asyncio
 async def test_semantic_search_accuracy(memory_manager, test_context):
     """Test semantic search with various queries"""
-    from sparkjar_crew.shared.schemas.memory_schemas import EntityCreate, Observation
+    # TODO: Fix import - schemas should be defined locally
+# from sparkjar_crew.shared.schemas.memory_schemas import ...
     
     # Create entities with diverse content
     entities = [
@@ -379,7 +383,8 @@ async def test_semantic_search_accuracy(memory_manager, test_context):
 @pytest.mark.asyncio
 async def test_observation_validation_integration(memory_manager, test_context):
     """Test that observation validation works correctly in practice"""
-    from sparkjar_crew.shared.schemas.memory_schemas import EntityCreate, Observation
+    # TODO: Fix import - schemas should be defined locally
+# from sparkjar_crew.shared.schemas.memory_schemas import ...
     
     # Create entity with various observation types
     entity = EntityCreate(
@@ -441,7 +446,8 @@ async def test_observation_validation_integration(memory_manager, test_context):
 async def test_client_insights_aggregation(memory_manager, test_context):
     """Test client insights aggregation functionality"""
     # Create diverse data
-    from sparkjar_crew.shared.schemas.memory_schemas import EntityCreate, Observation, RelationCreate
+    # TODO: Fix import - schemas should be defined locally
+# from sparkjar_crew.shared.schemas.memory_schemas import ...
     
     # Create multiple entities
     entities = []
@@ -497,7 +503,8 @@ async def test_client_insights_aggregation(memory_manager, test_context):
 @pytest.mark.asyncio
 async def test_duplicate_entity_handling(memory_manager, test_context):
     """Test that duplicate entities are handled correctly"""
-    from sparkjar_crew.shared.schemas.memory_schemas import EntityCreate, Observation
+    # TODO: Fix import - schemas should be defined locally
+# from sparkjar_crew.shared.schemas.memory_schemas import ...
     
     # Create initial entity
     entity = EntityCreate(
@@ -543,7 +550,8 @@ async def test_duplicate_entity_handling(memory_manager, test_context):
 @pytest.mark.asyncio
 async def test_error_handling_and_recovery(memory_manager, test_context, db_session):
     """Test error handling and transaction rollback"""
-    from sparkjar_crew.shared.schemas.memory_schemas import EntityCreate, Observation, RelationCreate
+    # TODO: Fix import - schemas should be defined locally
+# from sparkjar_crew.shared.schemas.memory_schemas import ...
     
     # Test invalid relation (non-existent entities)
     with pytest.raises(Exception):
