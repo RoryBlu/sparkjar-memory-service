@@ -74,6 +74,16 @@ SCHEMA_NAMING = {
 }
 ```
 
+### Database Seeding
+
+Run the seeding scripts once to populate the `object_schemas` table with the
+default schemas:
+
+```bash
+python scripts/seed_memory_schemas.py
+python scripts/seed_relationship_schemas.py
+```
+
 ## Schema Definitions by Entity Type
 
 ### 1. Procedure Metadata Schema
