@@ -8,6 +8,7 @@ from sqlalchemy import text
 from typing import List, Optional, Dict, Any
 from uuid import UUID
 import os
+import json
 import logging
 from datetime import datetime
 from pydantic import BaseModel

@@ -10,7 +10,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent
 # REMOVED: sys.path.insert(0, str(project_root))
 
-from shared.config.config_validator import validate_config_on_startup
+from sparkjar_shared.config.config_validator import validate_config_on_startup
 
 class Settings(BaseSettings):
     # Database

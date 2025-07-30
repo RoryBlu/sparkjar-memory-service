@@ -11,9 +11,28 @@ import sys
 import os
 
 # Add shared path for schemas
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from sparkjar_crew.shared.schemas.memory_schemas import *
-from config import settings
+# For now, skip the problematic import and define what we need
+from pydantic import BaseModel, Field
+from typing import List, Optional, Dict, Any
+from uuid import UUID
+
+# Import config
+try:
+    from config import Settings
+    settings = Settings()
+except:
+    # Fallback settings
+    class Settings:
+        SECRET_KEY = os.getenv("API_SECRET_KEY", "test-key")
+        INTERNAL_API_PORT = int(os.getenv("INTERNAL_API_PORT", "8001"))
+        INTERNAL_API_HOST = "::"
+        EXTERNAL_API_PORT = int(os.getenv("EXTERNAL_API_PORT", "8443"))
+        EXTERNAL_API_HOST = "0.0.0.0"
+    settings = Settings()
 
 # External API - Secure IPv4/HTTPS
 external_app = FastAPI(
