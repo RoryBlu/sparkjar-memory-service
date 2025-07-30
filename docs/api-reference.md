@@ -879,6 +879,28 @@ Every entity MUST have at least one relationship. Common patterns:
 }
 ```
 
+### 15. List Object Schemas
+
+Retrieve schemas stored in the `object_schemas` table.
+
+**Endpoint:** `GET /schemas`
+
+**Query Parameters:**
+- `object_type` (optional) – filter results by object type.
+
+**Response:**
+```json
+[
+  {
+    "id": 1,
+    "name": "procedure_metadata",
+    "object_type": "memory_entity_metadata",
+    "schema": {"required": ["version"]},
+    "created_at": "2024-01-01T00:00:00Z"
+  }
+]
+```
+
 ## Error Responses
 
 All endpoints return standard error responses:

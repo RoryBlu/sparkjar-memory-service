@@ -8,20 +8,21 @@ from typing import List, Dict, Any, Optional
 from uuid import UUID
 from datetime import datetime
 
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, Depends
 
 from config import settings
 
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import text, select
+from sparkjar_crew.shared.database.connection import get_pooled_session
+from sparkjar_crew.shared.database.models import ObjectSchemas
 
 internal_app = FastAPI(
     title="SparkJar Memory Service - Internal",
     description="Internal memory API for service-to-service communication",
     version="1.0.0",
 )
-
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import text
 
 logging.getLogger(__name__).info("Using database for storage")
 
@@ -174,6 +175,27 @@ async def search_memories(
         }
         for e in entities
     ]
+
+
+@internal_app.get("/schemas")
+async def list_schemas(object_type: Optional[str] = None):
+    """Return object schemas optionally filtered by object_type."""
+    async with get_pooled_session() as session:
+        stmt = select(ObjectSchemas)
+        if object_type:
+            stmt = stmt.where(ObjectSchemas.object_type == object_type)
+        result = await session.execute(stmt)
+        rows = result.scalars().all()
+        return [
+            {
+                "id": r.id,
+                "name": r.name,
+                "object_type": r.object_type,
+                "schema": r.schema,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+            }
+            for r in rows
+        ]
 
 
 @internal_app.get("/debug/storage")
