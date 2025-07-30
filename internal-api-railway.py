@@ -19,12 +19,21 @@ logger = logging.getLogger(__name__)
 
 # Database configuration
 DATABASE_URL = os.getenv("DATABASE_URL", "")
-if DATABASE_URL.startswith("postgresql://"):
+if not DATABASE_URL:
+    logger.error("DATABASE_URL environment variable not set!")
+    # Use a dummy URL to prevent crashes during startup
+    DATABASE_URL = "postgresql+asyncpg://user:pass@localhost/db"
+elif DATABASE_URL.startswith("postgresql://"):
     DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
 
-# Create async engine
-engine = create_async_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
-AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+# Create async engine with error handling
+try:
+    engine = create_async_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
+    AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+except Exception as e:
+    logger.error(f"Failed to create database engine: {e}")
+    engine = None
+    AsyncSessionLocal = None
 
 # FastAPI app
 internal_app = FastAPI(
@@ -49,31 +58,59 @@ class ObservationCreate(BaseModel):
 
 # Dependency
 async def get_db():
+    if not AsyncSessionLocal:
+        raise HTTPException(status_code=503, detail="Database not configured")
     async with AsyncSessionLocal() as session:
         yield session
+
+@internal_app.get("/")
+async def root():
+    """Root endpoint for basic connectivity check."""
+    return {
+        "service": "memory-internal",
+        "version": "1.0.0",
+        "status": "running",
+        "endpoints": ["/health", "/entities", "/observations", "/search"]
+    }
 
 @internal_app.get("/health")
 async def health_check():
     """Health check endpoint."""
+    health_status = {
+        "service": "memory-internal",
+        "timestamp": datetime.utcnow().isoformat(),
+        "environment": {
+            "port": os.getenv("PORT", "unknown"),
+            "has_database_url": bool(os.getenv("DATABASE_URL")),
+            "environment": os.getenv("ENVIRONMENT", "unknown")
+        }
+    }
+    
+    if not AsyncSessionLocal:
+        health_status.update({
+            "status": "degraded",
+            "database": "not configured",
+            "message": "Service running without database"
+        })
+        return health_status
+    
     try:
         async with AsyncSessionLocal() as session:
             result = await session.execute(text("SELECT 1"))
             result.scalar()
-        return {
+        health_status.update({
             "status": "healthy",
-            "service": "memory-internal",
-            "database": "connected",
-            "timestamp": datetime.utcnow().isoformat()
-        }
+            "database": "connected"
+        })
     except Exception as e:
         logger.error(f"Health check failed: {e}")
-        return {
+        health_status.update({
             "status": "unhealthy",
-            "service": "memory-internal",
             "database": "disconnected",
-            "error": str(e),
-            "timestamp": datetime.utcnow().isoformat()
-        }
+            "error": str(e)
+        })
+    
+    return health_status
 
 @internal_app.post("/entities")
 async def create_entities(
