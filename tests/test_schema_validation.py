@@ -12,6 +12,12 @@ import asyncio
 from datetime import datetime
 from uuid import uuid4
 
+from sparkjar_shared.services.schema_validator import (
+    MemorySchemaValidator,
+    ThinkingSchemaValidator,
+    CrewSchemaValidator,
+)
+
 # Test data
 TEST_CLIENT_ID = uuid4()
 TEST_ACTOR_ID = uuid4()
@@ -19,7 +25,6 @@ TEST_ACTOR_ID = uuid4()
 @pytest.mark.asyncio
 async def test_memory_observation_validation(db_session):
     """Test validation of memory observations against schemas"""
-    # TODO: Fix import - validator should be local
 # from services.schema_validator import ...
     
     validator = MemorySchemaValidator(db_session)
@@ -83,7 +88,6 @@ async def test_memory_observation_validation(db_session):
 @pytest.mark.asyncio
 async def test_entity_metadata_validation(db_session):
     """Test validation of entity metadata"""
-    # TODO: Fix import - validator should be local
 # from services.schema_validator import ...
     
     validator = MemorySchemaValidator(db_session)
@@ -125,7 +129,6 @@ async def test_entity_metadata_validation(db_session):
 @pytest.mark.asyncio
 async def test_thinking_session_validation(db_session):
     """Test validation of thinking session metadata"""
-    # TODO: Fix import - validator should be local
 # from services.schema_validator import ...
     
     validator = ThinkingSchemaValidator(db_session)
@@ -163,7 +166,6 @@ async def test_thinking_session_validation(db_session):
 @pytest.mark.asyncio
 async def test_thought_metadata_validation(db_session):
     """Test validation of thought metadata"""
-    # TODO: Fix import - validator should be local
 # from services.schema_validator import ...
     
     validator = ThinkingSchemaValidator(db_session)
@@ -211,7 +213,6 @@ async def test_thought_metadata_validation(db_session):
 @pytest.mark.asyncio
 async def test_schema_caching(db_session):
     """Test that schema caching works correctly"""
-    # TODO: Fix import - validator should be local
 # from services.schema_validator import ...
     
     validator = MemorySchemaValidator(db_session)
@@ -242,7 +243,6 @@ async def test_schema_caching(db_session):
 @pytest.mark.asyncio
 async def test_batch_validation(db_session):
     """Test batch validation of multiple items"""
-    # TODO: Fix import - validator should be local
 # from services.schema_validator import ...
     
     validator = MemorySchemaValidator(db_session)
@@ -265,7 +265,6 @@ async def test_batch_validation(db_session):
 @pytest.mark.asyncio
 async def test_validation_metadata_storage(db_session):
     """Test that validation metadata is stored correctly"""
-    # TODO: Fix import - validator should be local
 # from services.schema_validator import ...
     
     validator = MemorySchemaValidator(db_session)
@@ -293,7 +292,6 @@ async def test_validation_metadata_storage(db_session):
 @pytest.mark.asyncio
 async def test_schema_not_found_handling(db_session):
     """Test handling when schema is not found"""
-    # TODO: Fix import - validator should be local
 # from services.schema_validator import ...
     
     validator = MemorySchemaValidator(db_session)
@@ -313,7 +311,6 @@ async def test_schema_not_found_handling(db_session):
 @pytest.mark.asyncio  
 async def test_crew_request_validation(db_session):
     """Test validation of crew API requests"""
-    # TODO: Fix import - validator should be local
 # from services.schema_validator import ...
     
     validator = CrewSchemaValidator(db_session)

@@ -13,8 +13,7 @@ import os
 
 from services.memory_manager import MemoryManager
 from services.embeddings import EmbeddingService
-# TODO: Fix import - schemas should be defined locally
-# from sparkjar_crew.shared.schemas.memory_schemas import ...
+from sparkjar_shared.schemas.memory_schemas import EntityCreate, Observation
 from database import get_db
 from config import settings
 
