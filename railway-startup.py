@@ -24,7 +24,7 @@ def main():
     
     try:
         # Import after logging is configured
-        from internal_api_railway import internal_app
+        from internal_api import internal_app
         import uvicorn
         
         logger.info(f"Starting uvicorn on 0.0.0.0:{port}")

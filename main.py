@@ -16,12 +16,12 @@ def main():
     
     if port > 8000:  # External API port
         logger.info("Starting EXTERNAL API")
-        from external_api_railway import external_app
+        from external_api import external_app
         import uvicorn
         uvicorn.run(external_app, host="0.0.0.0", port=port)
     else:  # Internal API port
         logger.info("Starting INTERNAL API")
-        from internal_api_railway import internal_app
+        from internal_api import internal_app
         import uvicorn
         uvicorn.run(internal_app, host="0.0.0.0", port=port)
 
