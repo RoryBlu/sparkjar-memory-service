@@ -281,6 +281,23 @@ async def seed_memory_schemas():
                 "required": ["agent_type"],
                 "additionalProperties": True
             }
+        },
+        {
+            "name": "skill_module_metadata",
+            "object_type": "memory_entity_metadata",
+            "description": "Schema for skill module metadata",
+            "schema": {
+                "$id": "skill_module_metadata",
+                "type": "object",
+                "title": "Skill Module Metadata Schema",
+                "properties": {
+                    "module_name": {"type": "string"},
+                    "instruction_set": {"type": "string"},
+                    "version": {"type": "string"}
+                },
+                "required": ["module_name", "instruction_set"],
+                "additionalProperties": True
+            }
         }
     ]
     
