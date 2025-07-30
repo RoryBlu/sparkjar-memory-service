@@ -1,3 +1,8 @@
+# MEMORY SERVICE ARCHITECTURE NOTE:
+# client_id field has been removed as it was redundant.
+# When actor_type = "client", the actor_id IS the client ID.
+# Example: actor_type="client", actor_id="1d1c2154-242b-4f49-9ca8-e57129ddc823"
+
 # services/memory_manager.py
 from typing import List, Optional, Dict, Any, Tuple
 from uuid import UUID, uuid4
@@ -181,7 +186,7 @@ class MemoryManager:
 
     async def create_entities(
         self, 
-        client_id: UUID, 
+        # client_id removed - use actor_id when actor_type="client"
         actor_type: str, 
         actor_id: UUID, 
         entities: List[EntityCreate]
@@ -309,7 +314,7 @@ class MemoryManager:
 
     async def create_relations(
         self,
-        client_id: UUID,
+        # client_id removed - use actor_id when actor_type="client"
         actor_type: str, 
         actor_id: UUID,
         relations: List[RelationCreate]
@@ -380,7 +385,7 @@ class MemoryManager:
 
     async def add_observations(
         self,
-        client_id: UUID,
+        # client_id removed - use actor_id when actor_type="client"
         actor_type: str,
         actor_id: UUID,
         observations: List[ObservationAdd]
@@ -471,7 +476,7 @@ class MemoryManager:
 
     async def search_nodes(
         self,
-        client_id: UUID,
+        # client_id removed - use actor_id when actor_type="client"
         actor_type: str,
         actor_id: UUID,
         query: str,
@@ -514,7 +519,7 @@ class MemoryManager:
     
     async def open_nodes(
         self,
-        client_id: UUID,
+        # client_id removed - use actor_id when actor_type="client"
         actor_type: str,
         actor_id: UUID,
         names: List[str]
@@ -531,7 +536,7 @@ class MemoryManager:
     
     async def read_graph(
         self,
-        client_id: UUID,
+        # client_id removed - use actor_id when actor_type="client"
         actor_type: str,
         actor_id: UUID
     ) -> Dict[str, Any]:
@@ -560,7 +565,7 @@ class MemoryManager:
     
     async def delete_entities(
         self,
-        client_id: UUID,
+        # client_id removed - use actor_id when actor_type="client"
         actor_type: str,
         actor_id: UUID,
         entity_names: List[str]
@@ -611,7 +616,7 @@ class MemoryManager:
     
     async def delete_relations(
         self,
-        client_id: UUID,
+        # client_id removed - use actor_id when actor_type="client"
         actor_type: str,
         actor_id: UUID,
         relations: List[Any]
@@ -690,7 +695,7 @@ class MemoryManager:
     
     async def remember_conversation(
         self,
-        client_id: UUID,
+        # client_id removed - use actor_id when actor_type="client"
         actor_type: str,
         actor_id: UUID,
         conversation_text: str,
@@ -827,7 +832,7 @@ class MemoryManager:
     
     async def find_connections(
         self,
-        client_id: UUID,
+        # client_id removed - use actor_id when actor_type="client"
         actor_type: str,
         actor_id: UUID,
         from_entity: str,
@@ -979,7 +984,7 @@ class MemoryManager:
     
     async def get_client_insights(
         self,
-        client_id: UUID,
+        # client_id removed - use actor_id when actor_type="client"
         actor_type: str,
         actor_id: UUID
     ) -> Dict[str, Any]:
@@ -1153,7 +1158,7 @@ class MemoryManager:
     
     async def process_text_chunk(
         self,
-        client_id: UUID,
+        # client_id removed - use actor_id when actor_type="client"
         actor_type: str,
         actor_id: UUID,
         text: str,
@@ -1236,7 +1241,7 @@ class MemoryManager:
     
     async def _search_context_memories(
         self,
-        client_id: UUID,
+        # client_id removed - use actor_id when actor_type="client"
         actor_type: str,
         actor_id: UUID,
         text_preview: str
@@ -1487,7 +1492,7 @@ OBSERVATIONS:
     
     async def _process_extraction(
         self,
-        client_id: UUID,
+        # client_id removed - use actor_id when actor_type="client"
         actor_type: str,
         actor_id: UUID,
         extraction: Dict[str, Any],

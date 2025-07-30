@@ -1,3 +1,8 @@
+# MEMORY SERVICE ARCHITECTURE NOTE:
+# client_id field has been removed as it was redundant.
+# When actor_type = "client", the actor_id IS the client ID.
+# Example: actor_type="client", actor_id="1d1c2154-242b-4f49-9ca8-e57129ddc823"
+
 # memory-service/internal_api_with_validation.py
 from fastapi import FastAPI, HTTPException, Depends, status
 from sqlalchemy.orm import Session
@@ -74,7 +79,7 @@ async def upsert_entities_internal(
     """Upsert entities with optional skill module context - internal endpoint"""
     try:
         result = await memory_manager.upsert_entities(
-            client_id=request.client_id,
+            client_id=request.actor_id  # When actor_type="client", this is the client_id,
             actor_type=request.actor_type,
             actor_id=request.actor_id,
             entities=request.entities,
@@ -107,7 +112,7 @@ async def create_entities_internal(
     """Create multiple entities - internal high-speed endpoint with validation"""
     try:
         result = await memory_manager.create_entities(
-            client_id=request.client_id,
+            client_id=request.actor_id  # When actor_type="client", this is the client_id,
             actor_type=request.actor_type,
             actor_id=request.actor_id,
             entities=request.entities
@@ -141,7 +146,7 @@ async def create_relations_internal(
     """Create relationships between entities with validation"""
     try:
         result = await memory_manager.create_relations(
-            client_id=request.client_id,
+            client_id=request.actor_id  # When actor_type="client", this is the client_id,
             actor_type=request.actor_type,
             actor_id=request.actor_id,
             relations=request.relations
@@ -167,7 +172,7 @@ async def add_observations_internal(
     """Add observations to existing entities with validation"""
     try:
         result = await memory_manager.add_observations(
-            client_id=request.client_id,
+            client_id=request.actor_id  # When actor_type="client", this is the client_id,
             actor_type=request.actor_type,
             actor_id=request.actor_id,
             observations=request.observations
@@ -194,7 +199,7 @@ async def search_nodes_internal(
     try:
         # Note: We don't validate actor on search operations since we're just reading
         result = await memory_manager.search_nodes(
-            client_id=request.client_id,
+            client_id=request.actor_id  # When actor_type="client", this is the client_id,
             actor_type=request.actor_type,
             actor_id=request.actor_id,
             query=request.query,

@@ -1,9 +1,15 @@
+# MEMORY SERVICE ARCHITECTURE NOTE:
+# client_id field has been removed as it was redundant.
+# When actor_type = "client", the actor_id IS the client ID.
+# Example: actor_type="client", actor_id="1d1c2154-242b-4f49-9ca8-e57129ddc823"
+
 # tests/test_real_embeddings.py
 import pytest
 import sys
 import os
 
-from sparkjar_crew.shared.schemas.memory_schemas import EntityCreate
+# TODO: Fix import - schemas should be defined locally
+# from sparkjar_crew.shared.schemas.memory_schemas import ...
 
 class TestRealEmbeddings:
     """Integration tests that verify real embedding service works"""

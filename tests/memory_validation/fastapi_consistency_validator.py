@@ -1,3 +1,8 @@
+# MEMORY SERVICE ARCHITECTURE NOTE:
+# client_id field has been removed as it was redundant.
+# When actor_type = "client", the actor_id IS the client ID.
+# Example: actor_type="client", actor_id="1d1c2154-242b-4f49-9ca8-e57129ddc823"
+
 """
 FastAPI Endpoint Consistency Validator.
 
@@ -49,7 +54,7 @@ class FastAPIConsistencyValidator(BaseValidator):
     def _generate_test_token(self) -> str:
         """Generate a test JWT token for external API authentication."""
         payload = {
-            "client_id": self.test_client_id,
+            # "client_id" removed - use actor_id when actor_type="client"
             "actor_type": "client",
             "actor_id": self.test_actor_id,
             "exp": datetime.utcnow() + timedelta(hours=1),
@@ -146,7 +151,7 @@ class FastAPIConsistencyValidator(BaseValidator):
                 async with aiohttp.ClientSession() as session:
                     # Internal API should accept requests without authentication
                     test_data = {
-                        "client_id": self.test_client_id,
+                        # "client_id" removed - use actor_id when actor_type="client"
                         "actor_type": "client",
                         "actor_id": self.test_actor_id,
                         "query": "test search",
@@ -266,7 +271,7 @@ class FastAPIConsistencyValidator(BaseValidator):
             try:
                 async with aiohttp.ClientSession() as session:
                     search_data = {
-                        "client_id": self.test_client_id,
+                        # "client_id" removed - use actor_id when actor_type="client"
                         "actor_type": "client",
                         "actor_id": self.test_actor_id,
                         "query": search_query,

@@ -1,3 +1,8 @@
+# MEMORY SERVICE ARCHITECTURE NOTE:
+# client_id field has been removed as it was redundant.
+# When actor_type = "client", the actor_id IS the client ID.
+# Example: actor_type="client", actor_id="1d1c2154-242b-4f49-9ca8-e57129ddc823"
+
 """
 Test schema validation functionality for both memory and thinking services.
 Tests the unified schema validator with real database operations.
@@ -14,7 +19,8 @@ TEST_ACTOR_ID = uuid4()
 @pytest.mark.asyncio
 async def test_memory_observation_validation(db_session):
     """Test validation of memory observations against schemas"""
-    from sparkjar_crew.shared.services.schema_validator import MemorySchemaValidator
+    # TODO: Fix import - validator should be local
+# from services.schema_validator import ...
     
     validator = MemorySchemaValidator(db_session)
     
@@ -77,7 +83,8 @@ async def test_memory_observation_validation(db_session):
 @pytest.mark.asyncio
 async def test_entity_metadata_validation(db_session):
     """Test validation of entity metadata"""
-    from sparkjar_crew.shared.services.schema_validator import MemorySchemaValidator
+    # TODO: Fix import - validator should be local
+# from services.schema_validator import ...
     
     validator = MemorySchemaValidator(db_session)
     
@@ -118,7 +125,8 @@ async def test_entity_metadata_validation(db_session):
 @pytest.mark.asyncio
 async def test_thinking_session_validation(db_session):
     """Test validation of thinking session metadata"""
-    from sparkjar_crew.shared.services.schema_validator import ThinkingSchemaValidator
+    # TODO: Fix import - validator should be local
+# from services.schema_validator import ...
     
     validator = ThinkingSchemaValidator(db_session)
     
@@ -155,7 +163,8 @@ async def test_thinking_session_validation(db_session):
 @pytest.mark.asyncio
 async def test_thought_metadata_validation(db_session):
     """Test validation of thought metadata"""
-    from sparkjar_crew.shared.services.schema_validator import ThinkingSchemaValidator
+    # TODO: Fix import - validator should be local
+# from services.schema_validator import ...
     
     validator = ThinkingSchemaValidator(db_session)
     
@@ -202,7 +211,8 @@ async def test_thought_metadata_validation(db_session):
 @pytest.mark.asyncio
 async def test_schema_caching(db_session):
     """Test that schema caching works correctly"""
-    from sparkjar_crew.shared.services.schema_validator import MemorySchemaValidator
+    # TODO: Fix import - validator should be local
+# from services.schema_validator import ...
     
     validator = MemorySchemaValidator(db_session)
     
@@ -232,7 +242,8 @@ async def test_schema_caching(db_session):
 @pytest.mark.asyncio
 async def test_batch_validation(db_session):
     """Test batch validation of multiple items"""
-    from sparkjar_crew.shared.services.schema_validator import MemorySchemaValidator
+    # TODO: Fix import - validator should be local
+# from services.schema_validator import ...
     
     validator = MemorySchemaValidator(db_session)
     
@@ -254,7 +265,8 @@ async def test_batch_validation(db_session):
 @pytest.mark.asyncio
 async def test_validation_metadata_storage(db_session):
     """Test that validation metadata is stored correctly"""
-    from sparkjar_crew.shared.services.schema_validator import MemorySchemaValidator
+    # TODO: Fix import - validator should be local
+# from services.schema_validator import ...
     
     validator = MemorySchemaValidator(db_session)
     
@@ -281,7 +293,8 @@ async def test_validation_metadata_storage(db_session):
 @pytest.mark.asyncio
 async def test_schema_not_found_handling(db_session):
     """Test handling when schema is not found"""
-    from sparkjar_crew.shared.services.schema_validator import MemorySchemaValidator
+    # TODO: Fix import - validator should be local
+# from services.schema_validator import ...
     
     validator = MemorySchemaValidator(db_session)
     
@@ -300,7 +313,8 @@ async def test_schema_not_found_handling(db_session):
 @pytest.mark.asyncio  
 async def test_crew_request_validation(db_session):
     """Test validation of crew API requests"""
-    from sparkjar_crew.shared.services.schema_validator import CrewSchemaValidator
+    # TODO: Fix import - validator should be local
+# from services.schema_validator import ...
     
     validator = CrewSchemaValidator(db_session)
     

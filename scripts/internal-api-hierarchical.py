@@ -1,3 +1,8 @@
+# MEMORY SERVICE ARCHITECTURE NOTE:
+# client_id field has been removed as it was redundant.
+# When actor_type = "client", the actor_id IS the client ID.
+# Example: actor_type="client", actor_id="1d1c2154-242b-4f49-9ca8-e57129ddc823"
+
 # memory-service/internal_api_hierarchical.py
 """
 Enhanced Internal Memory API with Hierarchical Access Support.
@@ -47,7 +52,7 @@ async def create_entities_internal(
     """Create multiple entities - internal high-speed endpoint"""
     try:
         result = await memory_manager.create_entities(
-            client_id=request.client_id,
+            client_id=request.actor_id  # When actor_type="client", this is the client_id,
             actor_type=request.actor_type,
             actor_id=request.actor_id,
             entities=request.entities
@@ -65,7 +70,7 @@ async def create_relations_internal(
     """Create relationships between entities"""
     try:
         result = await memory_manager.create_relations(
-            client_id=request.client_id,
+            client_id=request.actor_id  # When actor_type="client", this is the client_id,
             actor_type=request.actor_type,
             actor_id=request.actor_id,
             relations=request.relations
@@ -83,7 +88,7 @@ async def add_observations_internal(
     """Add observations to existing entities"""
     try:
         result = await memory_manager.add_observations(
-            client_id=request.client_id,
+            client_id=request.actor_id  # When actor_type="client", this is the client_id,
             actor_type=request.actor_type,
             actor_id=request.actor_id,
             observations=request.observations
@@ -111,7 +116,7 @@ async def search_nodes_internal(
     """
     try:
         result = await memory_manager.search_nodes(
-            client_id=request.client_id,
+            client_id=request.actor_id  # When actor_type="client", this is the client_id,
             actor_type=request.actor_type,
             actor_id=request.actor_id,
             query=request.query,
@@ -139,7 +144,7 @@ async def search_hierarchical_memories(
     """
     try:
         result = await memory_manager.search_hierarchical_memories(
-            client_id=request.client_id,
+            client_id=request.actor_id  # When actor_type="client", this is the client_id,
             actor_type=request.actor_type,
             actor_id=request.actor_id,
             query=request.query,
@@ -164,7 +169,7 @@ async def get_entities_internal(
         # Handle both old open_nodes method and new get_entities
         if hasattr(request, 'entity_names'):
             result = await memory_manager.get_entities(
-                client_id=request.client_id,
+                client_id=request.actor_id  # When actor_type="client", this is the client_id,
                 actor_type=request.actor_type,
                 actor_id=request.actor_id,
                 entity_names=request.entity_names,
@@ -174,7 +179,7 @@ async def get_entities_internal(
         else:
             # Fallback for legacy open_nodes
             result = await memory_manager.open_nodes(
-                client_id=request.client_id,
+                client_id=request.actor_id  # When actor_type="client", this is the client_id,
                 actor_type=request.actor_type,
                 actor_id=request.actor_id,
                 names=request.names
@@ -200,7 +205,7 @@ async def access_cross_context_memories(
     """
     try:
         result = await memory_manager.access_context_memories(
-            client_id=request.client_id,
+            client_id=request.actor_id  # When actor_type="client", this is the client_id,
             requesting_actor_type=request.requesting_actor_type,
             requesting_actor_id=request.requesting_actor_id,
             target_actor_type=request.target_actor_type,

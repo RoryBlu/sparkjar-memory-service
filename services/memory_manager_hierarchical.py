@@ -1,3 +1,8 @@
+# MEMORY SERVICE ARCHITECTURE NOTE:
+# client_id field has been removed as it was redundant.
+# When actor_type = "client", the actor_id IS the client ID.
+# Example: actor_type="client", actor_id="1d1c2154-242b-4f49-9ca8-e57129ddc823"
+
 # services/memory_manager_hierarchical.py
 """
 Enhanced MemoryManager with hierarchical memory access support.
@@ -110,7 +115,7 @@ class HierarchicalMemoryManager(MemoryManager):
     
     def _build_hierarchical_filter(
         self,
-        client_id: UUID,
+        # client_id removed - use actor_id when actor_type="client"
         actor_type: str,
         actor_id: UUID,
         include_synth_class: bool = True,
@@ -191,7 +196,7 @@ class HierarchicalMemoryManager(MemoryManager):
     
     async def search_hierarchical_memories(
         self,
-        client_id: UUID,
+        # client_id removed - use actor_id when actor_type="client"
         actor_type: str,
         actor_id: UUID,
         query: str,
@@ -279,7 +284,7 @@ class HierarchicalMemoryManager(MemoryManager):
     
     async def search_nodes(
         self,
-        client_id: UUID,
+        # client_id removed - use actor_id when actor_type="client"
         actor_type: str,
         actor_id: UUID,
         query: str,
@@ -311,7 +316,7 @@ class HierarchicalMemoryManager(MemoryManager):
     
     async def get_entities(
         self,
-        client_id: UUID,
+        # client_id removed - use actor_id when actor_type="client"
         actor_type: str,
         actor_id: UUID,
         entity_names: Optional[List[str]] = None,
@@ -344,7 +349,7 @@ class HierarchicalMemoryManager(MemoryManager):
     
     async def access_context_memories(
         self,
-        client_id: UUID,
+        # client_id removed - use actor_id when actor_type="client"
         requesting_actor_type: str,
         requesting_actor_id: UUID,
         target_actor_type: str,

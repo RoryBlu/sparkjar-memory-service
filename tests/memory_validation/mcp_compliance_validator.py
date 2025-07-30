@@ -44,7 +44,8 @@ class MCPComplianceValidator(BaseValidator):
             import sys
             # Use proper package imports - no sys.path manipulation needed
             try:
-                from sparkjar_crew.services.memory_service.mcp_server import MemoryMCPServer
+                # TODO: Fix import - MCP server should be local
+# from mcp_server import ...
             except ImportError:
                 # Fallback for development
                 from pathlib import Path

@@ -1,3 +1,8 @@
+# MEMORY SERVICE ARCHITECTURE NOTE:
+# client_id field has been removed as it was redundant.
+# When actor_type = "client", the actor_id IS the client ID.
+# Example: actor_type="client", actor_id="1d1c2154-242b-4f49-9ca8-e57129ddc823"
+
 # tests/test_api_endpoints.py
 import pytest
 from fastapi.testclient import TestClient
@@ -23,7 +28,7 @@ class TestInternalAPI:
     def test_create_entities(self, client):
         """Test entity creation endpoint"""
         request_data = {
-            "client_id": str(uuid4()),
+            # "client_id" removed - use actor_id when actor_type="client"
             "actor_type": "human",
             "actor_id": str(uuid4()),
             "entities": [
@@ -52,7 +57,7 @@ class TestInternalAPI:
         """Test search endpoint"""
         # First create an entity
         create_request = {
-            "client_id": str(uuid4()),
+            # "client_id" removed - use actor_id when actor_type="client"
             "actor_type": "human",
             "actor_id": str(uuid4()),
             "entities": [
@@ -76,7 +81,7 @@ class TestInternalAPI:
         
         # Now search
         search_request = {
-            "client_id": create_request["client_id"],
+            # "client_id" removed - use actor_id when actor_type="client"
             "actor_type": create_request["actor_type"],
             "actor_id": create_request["actor_id"],
             "query": "Python",
@@ -93,7 +98,7 @@ class TestInternalAPI:
     def test_add_observations(self, client):
         """Test adding observations to existing entity"""
         context = {
-            "client_id": str(uuid4()),
+            # "client_id" removed - use actor_id when actor_type="client"
             "actor_type": "human",
             "actor_id": str(uuid4())
         }
@@ -152,7 +157,7 @@ class TestExternalAPI:
     def auth_token(self):
         """Generate a valid JWT token for testing"""
         payload = {
-            "client_id": str(uuid4()),
+            # "client_id" removed - use actor_id when actor_type="client"
             "actor_type": "human",
             "actor_id": str(uuid4()),
             "exp": (datetime.utcnow() + timedelta(minutes=30)).timestamp()
@@ -204,7 +209,7 @@ class TestExternalAPI:
     def test_token_generation(self, client):
         """Test JWT token generation endpoint"""
         request_data = {
-            "client_id": str(uuid4()),
+            # "client_id" removed - use actor_id when actor_type="client"
             "actor_type": "synth",
             "actor_id": str(uuid4()),
             "api_key": settings.SECRET_KEY  # In dev, using secret key
@@ -222,7 +227,7 @@ class TestExternalAPI:
         """Test that expired tokens are rejected"""
         # Create expired token
         payload = {
-            "client_id": str(uuid4()),
+            # "client_id" removed - use actor_id when actor_type="client"
             "actor_type": "human",
             "actor_id": str(uuid4()),
             "exp": (datetime.utcnow() - timedelta(minutes=1)).timestamp()  # Expired

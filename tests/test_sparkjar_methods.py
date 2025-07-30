@@ -1,3 +1,8 @@
+# MEMORY SERVICE ARCHITECTURE NOTE:
+# client_id field has been removed as it was redundant.
+# When actor_type = "client", the actor_id IS the client ID.
+# Example: actor_type="client", actor_id="1d1c2154-242b-4f49-9ca8-e57129ddc823"
+
 # tests/test_sparkjar_methods.py
 import pytest
 from uuid import uuid4
@@ -9,7 +14,8 @@ import os
 
 from services.memory_manager import MemoryManager
 from services.embeddings import EmbeddingService
-from sparkjar_crew.shared.schemas.memory_schemas import EntityCreate, Observation
+# TODO: Fix import - schemas should be defined locally
+# from sparkjar_crew.shared.schemas.memory_schemas import ...
 from database import get_db
 from config import settings
 
@@ -25,7 +31,7 @@ def memory_manager(db_session: Session):
 def test_context():
     """Test context for all operations"""
     return {
-        "client_id": uuid4(),
+        # "client_id" removed - use actor_id when actor_type="client"
         "actor_type": "human",
         "actor_id": uuid4()
     }

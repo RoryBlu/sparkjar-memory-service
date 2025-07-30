@@ -1,3 +1,8 @@
+# MEMORY SERVICE ARCHITECTURE NOTE:
+# client_id field has been removed as it was redundant.
+# When actor_type = "client", the actor_id IS the client ID.
+# Example: actor_type="client", actor_id="1d1c2154-242b-4f49-9ca8-e57129ddc823"
+
 """Memory system health checker implementation."""
 
 import asyncio
@@ -195,7 +200,7 @@ class MemorySystemHealthChecker(BaseValidator):
                     VALUES (:id, :client_id, :name, :type, :metadata)
                 """), {
                     "id": test_entity_id,
-                    "client_id": "health_check_client",
+                    # "client_id" removed - use actor_id when actor_type="client"
                     "name": "Health Check Entity",
                     "type": "test",
                     "metadata": '{"test": true}'

@@ -1,3 +1,8 @@
+# MEMORY SERVICE ARCHITECTURE NOTE:
+# client_id field has been removed as it was redundant.
+# When actor_type = "client", the actor_id IS the client ID.
+# Example: actor_type="client", actor_id="1d1c2154-242b-4f49-9ca8-e57129ddc823"
+
 #!/usr/bin/env python3
 """
 Test script for skill module context functionality in Memory Service.
@@ -27,7 +32,7 @@ async def test_create_skill_module_memories():
     async with httpx.AsyncClient() as client:
         # Create memories as skill module
         request_data = {
-            "client_id": CLIENT_ID,
+            # "client_id" removed - use actor_id when actor_type="client"
             "actor_type": "skill_module",
             "actor_id": SKILL_MODULE_ID,
             "entities": [
@@ -70,7 +75,7 @@ async def test_synth_upsert_with_skill_module_context():
     async with httpx.AsyncClient() as client:
         # Upsert memories with skill module context
         request_data = {
-            "client_id": CLIENT_ID,
+            # "client_id" removed - use actor_id when actor_type="client"
             "actor_type": "synth",
             "actor_id": SYNTH_ID,
             "entities": [
@@ -122,7 +127,7 @@ async def test_hierarchical_search():
     async with httpx.AsyncClient() as client:
         # Search as synth (should include skill module memories)
         request_data = {
-            "client_id": CLIENT_ID,
+            # "client_id" removed - use actor_id when actor_type="client"
             "actor_type": "synth", 
             "actor_id": SYNTH_ID,
             "query": "odoo partner model fields",
@@ -160,7 +165,7 @@ async def test_validation_errors():
         # Test 1: Non-synth trying to use skill_module_id
         print("\n  a) Testing non-synth using skill_module_id...")
         request_data = {
-            "client_id": CLIENT_ID,
+            # "client_id" removed - use actor_id when actor_type="client"
             "actor_type": "human",
             "actor_id": "423e4567-e89b-12d3-a456-426614174003",
             "entities": [{"entity_name": "test", "entity_type": "test", "observations": []}]
