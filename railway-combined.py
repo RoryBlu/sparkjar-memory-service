@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 def run_internal_api():
     """Run the internal API."""
     try:
-        from internal_api_railway import internal_app
+        from internal_api import internal_app
         import uvicorn
         
         port = 8001
@@ -29,7 +29,7 @@ def run_internal_api():
 def run_external_api():
     """Run the external API."""
     try:
-        from external_api_railway import external_app
+        from external_api import external_app
         import uvicorn
         
         port = int(os.getenv("PORT", "8443"))
