@@ -15,7 +15,8 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-# For now, skip the problematic import and define what we need
+# Skip the problematic import - define what we need inline
+# from sparkjar_crew.shared.schemas.memory_schemas import *  # REMOVED - doesn't exist in this repo
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 from uuid import UUID
@@ -329,6 +330,6 @@ async def create_token(
         "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
     }
 
-# Import and include thinking routes
-from api.thinking_routes import router as thinking_router
-external_app.include_router(thinking_router, prefix="/api/v1")
+# Import and include thinking routes - DISABLED for Railway
+# from api.thinking_routes import router as thinking_router
+# external_app.include_router(thinking_router, prefix="/api/v1")

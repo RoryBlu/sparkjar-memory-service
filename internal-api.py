@@ -12,8 +12,111 @@ import os
 from database import get_db
 from services.memory_manager import MemoryManager
 from services.embeddings import EmbeddingService
-from sparkjar_crew.shared.schemas.memory_schemas import *
+# from sparkjar_crew.shared.schemas.memory_schemas import *  # REMOVED - doesn't exist in this repo
+# Define schemas inline instead
+from pydantic import BaseModel
+from typing import List, Optional, Dict, Any
+from uuid import UUID
 from config import settings
+
+# Schema definitions
+class EntityCreate(BaseModel):
+    name: str
+    entityType: str
+    metadata: Dict[str, Any] = {}
+
+class CreateEntitiesRequest(BaseModel):
+    client_id: UUID
+    actor_type: str
+    actor_id: UUID
+    entities: List[EntityCreate]
+
+class RelationCreate(BaseModel):
+    fromEntity: str
+    toEntity: str
+    relationType: str
+    metadata: Dict[str, Any] = {}
+
+class CreateRelationsRequest(BaseModel):
+    client_id: UUID
+    actor_type: str
+    actor_id: UUID
+    relations: List[RelationCreate]
+
+class ObservationAdd(BaseModel):
+    entityName: str
+    observationType: str
+    content: str
+    metadata: Dict[str, Any] = {}
+
+class AddObservationsRequest(BaseModel):
+    client_id: UUID
+    actor_type: str
+    actor_id: UUID
+    observations: List[ObservationAdd]
+
+class SearchRequest(BaseModel):
+    client_id: UUID
+    actor_type: str
+    actor_id: UUID
+    query: str
+    entity_type: Optional[str] = None
+    limit: int = 10
+    threshold: float = 0.7
+
+class OpenNodesRequest(BaseModel):
+    client_id: UUID
+    actor_type: str
+    actor_id: UUID
+    names: List[str]
+
+class ReadGraphRequest(BaseModel):
+    client_id: UUID
+    actor_type: str
+    actor_id: UUID
+
+class DeleteEntitiesRequest(BaseModel):
+    client_id: UUID
+    actor_type: str
+    actor_id: UUID
+    entity_names: List[str]
+
+class DeleteRelationsRequest(BaseModel):
+    client_id: UUID
+    actor_type: str
+    actor_id: UUID
+    relations: List[RelationCreate]
+
+class RememberConversationRequest(BaseModel):
+    client_id: UUID
+    actor_type: str
+    actor_id: UUID
+    conversation_text: str
+    participants: List[str]
+    context: Dict[str, Any] = {}
+
+class FindConnectionsRequest(BaseModel):
+    client_id: UUID
+    actor_type: str
+    actor_id: UUID
+    from_entity: str
+    to_entity: Optional[str] = None
+    max_hops: int = 3
+    relationship_types: Optional[List[str]] = None
+
+class GetClientInsightsRequest(BaseModel):
+    client_id: UUID
+    actor_type: str
+    actor_id: UUID
+
+class ProcessTextChunkRequest(BaseModel):
+    client_id: UUID
+    actor_type: str
+    actor_id: UUID
+    text: str
+    source: str
+    extract_context: bool = True
+    context_preview_length: int = 100
 
 # Internal API - High Performance IPv6/HTTP
 internal_app = FastAPI(
@@ -250,6 +353,6 @@ async def process_text_chunk_internal(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Process text chunk failed: {str(e)}")
 
-# Import and include thinking routes
-from api.thinking_routes import router as thinking_router
-internal_app.include_router(thinking_router, prefix="/api/v1")
+# Import and include thinking routes - DISABLED for Railway
+# from api.thinking_routes import router as thinking_router
+# internal_app.include_router(thinking_router, prefix="/api/v1")
