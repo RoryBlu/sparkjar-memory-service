@@ -111,6 +111,18 @@ mypy src/
 ```
 Run `pytest` to execute tests, format code with `black` and `isort`, and run `mypy` for type checking.
 
+## Utility Scripts
+
+`scripts/fetch_object_schemas.py` fetches every row from the `object_schemas`
+table and outputs the data as JSON. You can optionally write the results to a
+file:
+
+```bash
+python scripts/fetch_object_schemas.py --output schemas.json
+```
+
+Without `--output` the JSON is printed to stdout.
+
 ## Docker
 
 ```bash
