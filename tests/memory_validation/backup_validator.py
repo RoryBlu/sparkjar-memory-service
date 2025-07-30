@@ -24,10 +24,13 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .base import BaseValidator, ValidationResult, ValidationStatus
-# TODO: Fix import - use local database connection
-# from database import get_db
-# TODO: Fix import - use local models
-# from database.models import ...
+from sparkjar_shared.database.connection import get_direct_session
+from sparkjar_shared.database.models import (
+    Clients,
+    ClientUsers,
+    CrewJobs,
+    CrewMemory,
+)
 
 class BackupValidator(BaseValidator):
     """Validates database backup and restore procedures."""
