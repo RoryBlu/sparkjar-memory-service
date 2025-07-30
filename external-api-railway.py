@@ -1,3 +1,8 @@
+# MEMORY SERVICE ARCHITECTURE NOTE:
+# client_id field has been removed as it was redundant.
+# When actor_type = "client", the actor_id IS the client ID.
+# Example: actor_type="client", actor_id="1d1c2154-242b-4f49-9ca8-e57129ddc823"
+
 #!/usr/bin/env python3
 """External API for Railway deployment - without problematic imports."""
 
@@ -79,7 +84,7 @@ async def verify_external_auth(credentials: HTTPAuthorizationCredentials = Secur
             raise HTTPException(status_code=401, detail="Token expired")
         
         # Check required claims
-        if not all(k in payload for k in ["client_id", "actor_type", "actor_id"]):
+        if not all(k in payload for k in ["actor_type", "actor_id"  # client_id removed - redundant]):
             raise HTTPException(status_code=401, detail="Invalid token claims")
         
         return payload
@@ -94,7 +99,7 @@ async def call_internal_api(endpoint: str, method: str = "POST", json_data: Any 
     
     # Add auth data to request if provided
     if token_data and json_data:
-        json_data["client_id"] = token_data["client_id"]
+        json_data["client_id"] = token_data["actor_id"]  # When actor_type="client", this is the client_id
         json_data["actor_type"] = token_data["actor_type"]
         json_data["actor_id"] = token_data["actor_id"]
     
@@ -153,7 +158,7 @@ async def create_entities_external(
 ):
     """Create memory entities - authenticated endpoint"""
     request_data = {
-        "client_id": token_data["client_id"],
+        # "client_id" removed - use actor_id when actor_type="client"
         "actor_type": token_data["actor_type"],
         "actor_id": token_data["actor_id"],
         "entities": [e.dict() for e in entities]
@@ -171,7 +176,7 @@ async def search_nodes_external(
 ):
     """Semantic search of memory entities"""
     request_data = {
-        "client_id": token_data["client_id"],
+        # "client_id" removed - use actor_id when actor_type="client"
         "actor_type": token_data["actor_type"],
         "actor_id": token_data["actor_id"],
         "query": query,
@@ -185,7 +190,7 @@ async def search_nodes_external(
 # Token generation endpoint (for testing/development)
 @external_app.post("/auth/token")
 async def create_token(
-    client_id: UUID,
+    # client_id removed - use actor_id when actor_type="client"
     actor_type: str,
     actor_id: UUID,
     api_key: str
@@ -198,7 +203,7 @@ async def create_token(
     # Create token
     expiration = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     payload = {
-        "client_id": str(client_id),
+        # "client_id" removed - use actor_id when actor_type="client"
         "actor_type": actor_type,
         "actor_id": str(actor_id),
         "exp": expiration.timestamp()

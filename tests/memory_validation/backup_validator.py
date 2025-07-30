@@ -1,3 +1,8 @@
+# MEMORY SERVICE ARCHITECTURE NOTE:
+# client_id field has been removed as it was redundant.
+# When actor_type = "client", the actor_id IS the client ID.
+# Example: actor_type="client", actor_id="1d1c2154-242b-4f49-9ca8-e57129ddc823"
+
 """
 Backup and restore validation for memory system.
 Tests database backup procedures, consistency, and restoration.
@@ -155,15 +160,15 @@ class BackupValidator(BaseValidator):
         async with get_direct_session() as session:
             client_count = await session.scalar(
                 text("SELECT COUNT(*) FROM clients WHERE id = :client_id"),
-                {"client_id": self.test_client_id}
+                {# "client_id" removed - use actor_id when actor_type="client"
             )
             job_count = await session.scalar(
                 text("SELECT COUNT(*) FROM crew_jobs WHERE client_id = :client_id"),
-                {"client_id": self.test_client_id}
+                {# "client_id" removed - use actor_id when actor_type="client"
             )
             memory_count = await session.scalar(
                 text("SELECT COUNT(*) FROM crew_memory WHERE client_id = :client_id"),
-                {"client_id": self.test_client_id}
+                {# "client_id" removed - use actor_id when actor_type="client"
             )
         
         # Perform backup
@@ -193,19 +198,19 @@ class BackupValidator(BaseValidator):
         async with get_direct_session() as session:
             await session.execute(
                 text("DELETE FROM crew_memory WHERE client_id = :client_id"),
-                {"client_id": self.test_client_id}
+                {# "client_id" removed - use actor_id when actor_type="client"
             )
             await session.execute(
                 text("DELETE FROM crew_jobs WHERE client_id = :client_id"),
-                {"client_id": self.test_client_id}
+                {# "client_id" removed - use actor_id when actor_type="client"
             )
             await session.execute(
                 text("DELETE FROM client_users WHERE client_id = :client_id"),
-                {"client_id": self.test_client_id}
+                {# "client_id" removed - use actor_id when actor_type="client"
             )
             await session.execute(
                 text("DELETE FROM clients WHERE id = :client_id"),
-                {"client_id": self.test_client_id}
+                {# "client_id" removed - use actor_id when actor_type="client"
             )
             await session.commit()
         
@@ -213,7 +218,7 @@ class BackupValidator(BaseValidator):
         async with get_direct_session() as session:
             client_exists = await session.scalar(
                 text("SELECT COUNT(*) FROM clients WHERE id = :client_id"),
-                {"client_id": self.test_client_id}
+                {# "client_id" removed - use actor_id when actor_type="client"
             )
             assert client_exists == 0, "Test data was not properly deleted"
         
@@ -225,15 +230,15 @@ class BackupValidator(BaseValidator):
         async with get_direct_session() as session:
             client_exists = await session.scalar(
                 text("SELECT COUNT(*) FROM clients WHERE id = :client_id"),
-                {"client_id": self.test_client_id}
+                {# "client_id" removed - use actor_id when actor_type="client"
             )
             job_count = await session.scalar(
                 text("SELECT COUNT(*) FROM crew_jobs WHERE client_id = :client_id"),
-                {"client_id": self.test_client_id}
+                {# "client_id" removed - use actor_id when actor_type="client"
             )
             memory_count = await session.scalar(
                 text("SELECT COUNT(*) FROM crew_memory WHERE client_id = :client_id"),
-                {"client_id": self.test_client_id}
+                {# "client_id" removed - use actor_id when actor_type="client"
             )
         
         assert client_exists > 0, "Client data was not restored"
@@ -324,7 +329,7 @@ class BackupValidator(BaseValidator):
                     # Perform some read operations
                     await session.execute(
                         text("SELECT COUNT(*) FROM clients WHERE id = :client_id"),
-                        {"client_id": self.test_client_id}
+                        {# "client_id" removed - use actor_id when actor_type="client"
                     )
                     
                     # Small write operation
@@ -501,19 +506,19 @@ class BackupValidator(BaseValidator):
             # Count test client data
             counts["clients"] = await session.scalar(
                 text("SELECT COUNT(*) FROM clients WHERE id = :client_id"),
-                {"client_id": self.test_client_id}
+                {# "client_id" removed - use actor_id when actor_type="client"
             )
             counts["crew_jobs"] = await session.scalar(
                 text("SELECT COUNT(*) FROM crew_jobs WHERE client_id = :client_id"),
-                {"client_id": self.test_client_id}
+                {# "client_id" removed - use actor_id when actor_type="client"
             )
             counts["crew_memory"] = await session.scalar(
                 text("SELECT COUNT(*) FROM crew_memory WHERE client_id = :client_id"),
-                {"client_id": self.test_client_id}
+                {# "client_id" removed - use actor_id when actor_type="client"
             )
             counts["client_users"] = await session.scalar(
                 text("SELECT COUNT(*) FROM client_users WHERE client_id = :client_id"),
-                {"client_id": self.test_client_id}
+                {# "client_id" removed - use actor_id when actor_type="client"
             )
         
         return counts
@@ -526,19 +531,19 @@ class BackupValidator(BaseValidator):
                 async with get_direct_session() as session:
                     await session.execute(
                         text("DELETE FROM crew_memory WHERE client_id = :client_id"),
-                        {"client_id": self.test_client_id}
+                        {# "client_id" removed - use actor_id when actor_type="client"
                     )
                     await session.execute(
                         text("DELETE FROM crew_jobs WHERE client_id = :client_id"),
-                        {"client_id": self.test_client_id}
+                        {# "client_id" removed - use actor_id when actor_type="client"
                     )
                     await session.execute(
                         text("DELETE FROM client_users WHERE client_id = :client_id"),
-                        {"client_id": self.test_client_id}
+                        {# "client_id" removed - use actor_id when actor_type="client"
                     )
                     await session.execute(
                         text("DELETE FROM clients WHERE id = :client_id"),
-                        {"client_id": self.test_client_id}
+                        {# "client_id" removed - use actor_id when actor_type="client"
                     )
                     await session.commit()
                 

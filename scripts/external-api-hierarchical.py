@@ -1,3 +1,8 @@
+# MEMORY SERVICE ARCHITECTURE NOTE:
+# client_id field has been removed as it was redundant.
+# When actor_type = "client", the actor_id IS the client ID.
+# Example: actor_type="client", actor_id="1d1c2154-242b-4f49-9ca8-e57129ddc823"
+
 # memory-service/external_api_hierarchical.py
 """
 Enhanced External Memory API with Hierarchical Access Support.
@@ -51,7 +56,7 @@ async def verify_external_auth(credentials: HTTPAuthorizationCredentials = Secur
             raise HTTPException(status_code=401, detail="Token expired")
         
         # Check required claims
-        if not all(k in payload for k in ["client_id", "actor_type", "actor_id"]):
+        if not all(k in payload for k in ["actor_type", "actor_id"  # client_id removed - redundant]):
             raise HTTPException(status_code=401, detail="Invalid token claims")
         
         # Check hierarchy permissions if present
@@ -76,7 +81,7 @@ async def call_internal_api(
     
     # Add auth data to request if provided
     if token_data and json_data:
-        json_data["client_id"] = token_data["client_id"]
+        json_data["client_id"] = token_data["actor_id"]  # When actor_type="client", this is the client_id
         json_data["actor_type"] = token_data["actor_type"]
         json_data["actor_id"] = token_data["actor_id"]
     
@@ -110,7 +115,7 @@ async def create_entities_external(
 ):
     """Create memory entities - authenticated endpoint"""
     request_data = {
-        "client_id": token_data["client_id"],
+        # "client_id" removed - use actor_id when actor_type="client"
         "actor_type": token_data["actor_type"],
         "actor_id": token_data["actor_id"],
         "entities": [e.dict() for e in entities]
@@ -138,7 +143,7 @@ async def search_memories_external(
     hierarchy_enabled = include_hierarchy and token_data.get("hierarchy_enabled", False)
     
     request_data = {
-        "client_id": token_data["client_id"],
+        # "client_id" removed - use actor_id when actor_type="client"
         "actor_type": token_data["actor_type"],
         "actor_id": token_data["actor_id"],
         "query": query,
@@ -172,7 +177,7 @@ async def hierarchical_search_external(
         )
     
     request_data = {
-        "client_id": token_data["client_id"],
+        # "client_id" removed - use actor_id when actor_type="client"
         "actor_type": token_data["actor_type"],
         "actor_id": token_data["actor_id"],
         "query": query,
@@ -194,7 +199,7 @@ async def create_relations_external(
 ):
     """Create relationships between entities"""
     request_data = {
-        "client_id": token_data["client_id"],
+        # "client_id" removed - use actor_id when actor_type="client"
         "actor_type": token_data["actor_type"],
         "actor_id": token_data["actor_id"],
         "relations": [r.dict() for r in relations]
@@ -209,7 +214,7 @@ async def add_observations_external(
 ):
     """Add observations to existing entities"""
     request_data = {
-        "client_id": token_data["client_id"],
+        # "client_id" removed - use actor_id when actor_type="client"
         "actor_type": token_data["actor_type"],
         "actor_id": token_data["actor_id"],
         "observations": [o.dict() for o in observations]
@@ -228,7 +233,7 @@ async def get_entities_external(
     hierarchy_enabled = include_hierarchy and token_data.get("hierarchy_enabled", False)
     
     request_data = {
-        "client_id": token_data["client_id"],
+        # "client_id" removed - use actor_id when actor_type="client"
         "actor_type": token_data["actor_type"],
         "actor_id": token_data["actor_id"],
         "entity_names": entity_names,
@@ -246,7 +251,7 @@ async def delete_entities_external(
 ):
     """Delete specific entities (soft delete)"""
     request_data = {
-        "client_id": token_data["client_id"],
+        # "client_id" removed - use actor_id when actor_type="client"
         "actor_type": token_data["actor_type"],
         "actor_id": token_data["actor_id"],
         "entity_names": entity_names
@@ -260,7 +265,7 @@ async def read_graph_external(
 ):
     """Get the complete memory graph for the authenticated actor"""
     request_data = {
-        "client_id": token_data["client_id"],
+        # "client_id" removed - use actor_id when actor_type="client"
         "actor_type": token_data["actor_type"],
         "actor_id": token_data["actor_id"]
     }

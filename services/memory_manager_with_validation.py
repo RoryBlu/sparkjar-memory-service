@@ -1,3 +1,8 @@
+# MEMORY SERVICE ARCHITECTURE NOTE:
+# client_id field has been removed as it was redundant.
+# When actor_type = "client", the actor_id IS the client ID.
+# Example: actor_type="client", actor_id="1d1c2154-242b-4f49-9ca8-e57129ddc823"
+
 # services/memory_manager_with_validation.py
 from typing import List, Optional, Dict, Any, Tuple
 from uuid import UUID, uuid4
@@ -187,7 +192,7 @@ class MemoryManager:
 
     async def create_entities(
         self, 
-        client_id: UUID, 
+        # client_id removed - use actor_id when actor_type="client"
         actor_type: str, 
         actor_id: UUID, 
         entities: List[EntityCreate]
@@ -323,7 +328,7 @@ class MemoryManager:
 
     async def create_relation(
         self, 
-        client_id: UUID, 
+        # client_id removed - use actor_id when actor_type="client"
         actor_type: str, 
         actor_id: UUID,
         relation: RelationCreate
@@ -418,7 +423,7 @@ class MemoryManager:
 
     async def upsert_entities(
         self,
-        client_id: UUID,
+        # client_id removed - use actor_id when actor_type="client"
         actor_type: str,
         actor_id: UUID,
         entities: List[EntityCreate],

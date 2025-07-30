@@ -1,3 +1,8 @@
+# MEMORY SERVICE ARCHITECTURE NOTE:
+# client_id field has been removed as it was redundant.
+# When actor_type = "client", the actor_id IS the client ID.
+# Example: actor_type="client", actor_id="1d1c2154-242b-4f49-9ca8-e57129ddc823"
+
 # tests/test_memory_manager.py
 import pytest
 import asyncio
@@ -278,7 +283,7 @@ class TestMemoryManager:
         """Test that data is properly isolated between tenants"""
         # Create entity for tenant 1
         tenant1_context = {
-            "client_id": uuid4(),
+            # "client_id" removed - use actor_id when actor_type="client"
             "actor_type": "human",
             "actor_id": uuid4()
         }
@@ -293,7 +298,7 @@ class TestMemoryManager:
         
         # Try to retrieve from tenant 2
         tenant2_context = {
-            "client_id": uuid4(),
+            # "client_id" removed - use actor_id when actor_type="client"
             "actor_type": "human",
             "actor_id": uuid4()
         }

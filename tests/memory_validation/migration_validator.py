@@ -1,3 +1,8 @@
+# MEMORY SERVICE ARCHITECTURE NOTE:
+# client_id field has been removed as it was redundant.
+# When actor_type = "client", the actor_id IS the client ID.
+# Example: actor_type="client", actor_id="1d1c2154-242b-4f49-9ca8-e57129ddc823"
+
 """
 Data migration validation for memory system.
 Tests data migration between environments and schema version migrations.
@@ -149,7 +154,7 @@ class MigrationValidator(BaseValidator):
             
         # Store migration metadata
         self.migration_metadata = {
-            "client_id": self.test_client_id,
+            # "client_id" removed - use actor_id when actor_type="client"
             "user_ids": user_ids,
             "job_ids": job_ids,
             "memory_ids": memory_ids,
@@ -290,7 +295,7 @@ class MigrationValidator(BaseValidator):
                 UPDATE crew_memory 
                 SET migration_test_column = 'migrated_value' 
                 WHERE client_id = :client_id
-            """), {"client_id": self.test_client_id})
+            """), {# "client_id" removed - use actor_id when actor_type="client"
             await session.commit()
         
         # Verify data migration
@@ -298,7 +303,7 @@ class MigrationValidator(BaseValidator):
             result = await session.execute(text("""
                 SELECT COUNT(*) FROM crew_memory 
                 WHERE client_id = :client_id AND migration_test_column = 'migrated_value'
-            """), {"client_id": self.test_client_id})
+            """), {# "client_id" removed - use actor_id when actor_type="client"
             migrated_count = result.scalar()
             assert migrated_count == 20, f"Expected 20 migrated records, found {migrated_count}"
         
@@ -356,7 +361,7 @@ class MigrationValidator(BaseValidator):
         async with get_direct_session() as session:
             other_data_count = await session.scalar(
                 text("SELECT COUNT(*) FROM crew_memory WHERE client_id = :client_id"),
-                {"client_id": other_client_id}
+                {# "client_id" removed - use actor_id when actor_type="client"
             )
             assert other_data_count > 0, "Other client data was affected by migration"
         
@@ -378,7 +383,7 @@ class MigrationValidator(BaseValidator):
                 UPDATE crew_memory 
                 SET memory_content = memory_content || ' [MIGRATED]'
                 WHERE client_id = :client_id
-            """), {"client_id": self.test_client_id})
+            """), {# "client_id" removed - use actor_id when actor_type="client"
             await session.commit()
         
         # Verify migration changes
@@ -386,7 +391,7 @@ class MigrationValidator(BaseValidator):
             result = await session.execute(text("""
                 SELECT COUNT(*) FROM crew_memory 
                 WHERE client_id = :client_id AND memory_content LIKE '%[MIGRATED]%'
-            """), {"client_id": self.test_client_id})
+            """), {# "client_id" removed - use actor_id when actor_type="client"
             migrated_count = result.scalar()
             assert migrated_count == 20, "Migration changes not applied"
         
@@ -399,7 +404,7 @@ class MigrationValidator(BaseValidator):
             result = await session.execute(text("""
                 SELECT COUNT(*) FROM crew_memory 
                 WHERE client_id = :client_id AND memory_content LIKE '%[MIGRATED]%'
-            """), {"client_id": self.test_client_id})
+            """), {# "client_id" removed - use actor_id when actor_type="client"
             migrated_count = result.scalar()
             assert migrated_count == 0, "Rollback did not restore original data"
         
@@ -435,18 +440,18 @@ class MigrationValidator(BaseValidator):
         async with get_direct_session() as session:
             client_exists = await session.scalar(
                 text("SELECT COUNT(*) FROM clients WHERE id = :client_id"),
-                {"client_id": new_client_id}
+                {# "client_id" removed - use actor_id when actor_type="client"
             )
             
             if client_exists > 0:
                 # If client was created, verify data consistency
                 job_count = await session.scalar(
                     text("SELECT COUNT(*) FROM crew_jobs WHERE client_id = :client_id"),
-                    {"client_id": new_client_id}
+                    {# "client_id" removed - use actor_id when actor_type="client"
                 )
                 memory_count = await session.scalar(
                     text("SELECT COUNT(*) FROM crew_memory WHERE client_id = :client_id"),
-                    {"client_id": new_client_id}
+                    {# "client_id" removed - use actor_id when actor_type="client"
                 )
                 
                 # Cleanup partial data
@@ -530,28 +535,28 @@ class MigrationValidator(BaseValidator):
                 # Export client data
                 client_result = await session.execute(
                     text("SELECT * FROM clients WHERE id = :client_id"),
-                    {"client_id": client_id}
+                    {# "client_id" removed - use actor_id when actor_type="client"
                 )
                 client_data = client_result.fetchone()
                 
                 # Export users
                 users_result = await session.execute(
                     text("SELECT * FROM client_users WHERE client_id = :client_id"),
-                    {"client_id": client_id}
+                    {# "client_id" removed - use actor_id when actor_type="client"
                 )
                 users_data = users_result.fetchall()
                 
                 # Export jobs
                 jobs_result = await session.execute(
                     text("SELECT * FROM crew_jobs WHERE client_id = :client_id"),
-                    {"client_id": client_id}
+                    {# "client_id" removed - use actor_id when actor_type="client"
                 )
                 jobs_data = jobs_result.fetchall()
                 
                 # Export memory
                 memory_result = await session.execute(
                     text("SELECT * FROM crew_memory WHERE client_id = :client_id"),
-                    {"client_id": client_id}
+                    {# "client_id" removed - use actor_id when actor_type="client"
                 )
                 memory_data = memory_result.fetchall()
                 
@@ -652,14 +657,14 @@ class MigrationValidator(BaseValidator):
             # Verify client
             client_count = await session.scalar(
                 text("SELECT COUNT(*) FROM clients WHERE id = :client_id"),
-                {"client_id": client_id}
+                {# "client_id" removed - use actor_id when actor_type="client"
             )
             assert client_count == 1, "Client not found after migration"
             
             # Verify users
             user_count = await session.scalar(
                 text("SELECT COUNT(*) FROM client_users WHERE client_id = :client_id"),
-                {"client_id": client_id}
+                {# "client_id" removed - use actor_id when actor_type="client"
             )
             assert user_count == len(expected_data["users"]), \
                 f"User count mismatch: expected {len(expected_data['users'])}, found {user_count}"
@@ -667,7 +672,7 @@ class MigrationValidator(BaseValidator):
             # Verify jobs
             job_count = await session.scalar(
                 text("SELECT COUNT(*) FROM crew_jobs WHERE client_id = :client_id"),
-                {"client_id": client_id}
+                {# "client_id" removed - use actor_id when actor_type="client"
             )
             assert job_count == len(expected_data["jobs"]), \
                 f"Job count mismatch: expected {len(expected_data['jobs'])}, found {job_count}"
@@ -675,7 +680,7 @@ class MigrationValidator(BaseValidator):
             # Verify memory
             memory_count = await session.scalar(
                 text("SELECT COUNT(*) FROM crew_memory WHERE client_id = :client_id"),
-                {"client_id": client_id}
+                {# "client_id" removed - use actor_id when actor_type="client"
             )
             assert memory_count == len(expected_data["memory"]), \
                 f"Memory count mismatch: expected {len(expected_data['memory'])}, found {memory_count}"
@@ -692,7 +697,7 @@ class MigrationValidator(BaseValidator):
             # Analyze job-user relationships
             jobs_result = await session.execute(
                 text("SELECT id, job_input FROM crew_jobs WHERE client_id = :client_id"),
-                {"client_id": client_id}
+                {# "client_id" removed - use actor_id when actor_type="client"
             )
             for job in jobs_result.fetchall():
                 job_input = job.job_input
@@ -705,7 +710,7 @@ class MigrationValidator(BaseValidator):
             # Analyze memory-job relationships
             memory_result = await session.execute(
                 text("SELECT id, memory_metadata FROM crew_memory WHERE client_id = :client_id"),
-                {"client_id": client_id}
+                {# "client_id" removed - use actor_id when actor_type="client"
             )
             for memory in memory_result.fetchall():
                 metadata = memory.memory_metadata
@@ -741,19 +746,19 @@ class MigrationValidator(BaseValidator):
         async with get_direct_session() as session:
             await session.execute(
                 text("DELETE FROM crew_memory WHERE client_id = :client_id"),
-                {"client_id": client_id}
+                {# "client_id" removed - use actor_id when actor_type="client"
             )
             await session.execute(
                 text("DELETE FROM crew_jobs WHERE client_id = :client_id"),
-                {"client_id": client_id}
+                {# "client_id" removed - use actor_id when actor_type="client"
             )
             await session.execute(
                 text("DELETE FROM client_users WHERE client_id = :client_id"),
-                {"client_id": client_id}
+                {# "client_id" removed - use actor_id when actor_type="client"
             )
             await session.execute(
                 text("DELETE FROM clients WHERE id = :client_id"),
-                {"client_id": client_id}
+                {# "client_id" removed - use actor_id when actor_type="client"
             )
             await session.commit()
     

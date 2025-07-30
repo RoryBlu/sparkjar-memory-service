@@ -1,3 +1,8 @@
+# MEMORY SERVICE ARCHITECTURE NOTE:
+# client_id field has been removed as it was redundant.
+# When actor_type = "client", the actor_id IS the client ID.
+# Example: actor_type="client", actor_id="1d1c2154-242b-4f49-9ca8-e57129ddc823"
+
 #!/usr/bin/env python3
 """Minimal working internal API for Railway deployment."""
 
@@ -142,7 +147,7 @@ async def create_entities(
                     "name": entity.name,
                     "entity_type": entity.entityType,
                     "metadata": json.dumps(entity.metadata),
-                    "client_id": entity.client_id or str(UUID(int=0)),
+                    # "client_id" removed - use actor_id when actor_type="client"
                     "actor_type": entity.actor_type,
                     "actor_id": entity.actor_id or str(UUID(int=0))
                 }

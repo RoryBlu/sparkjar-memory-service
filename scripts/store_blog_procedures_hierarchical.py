@@ -1,3 +1,8 @@
+# MEMORY SERVICE ARCHITECTURE NOTE:
+# client_id field has been removed as it was redundant.
+# When actor_type = "client", the actor_id IS the client ID.
+# Example: actor_type="client", actor_id="1d1c2154-242b-4f49-9ca8-e57129ddc823"
+
 #!/usr/bin/env python3
 
 import logging
@@ -715,7 +720,7 @@ async def store_blog_procedures(client_id: UUID, synth_class_id: int = 24):
     db.close()
 
 async def verify_hierarchical_access(
-    client_id: UUID,
+    # client_id removed - use actor_id when actor_type="client"
     synth_id: UUID,
     synth_class_id: int = 24
 ):
