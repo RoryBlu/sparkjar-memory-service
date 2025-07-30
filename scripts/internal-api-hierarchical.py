@@ -21,7 +21,7 @@ import logging
 # Add shared path for schemas
 
 from database import get_db
-from services.memory_manager_hierarchical import HierarchicalMemoryManager
+from services.memory_manager import MemoryManager
 from services.embeddings import EmbeddingService
 from sparkjar_crew.shared.schemas.memory_schemas import *
 from config import settings
@@ -35,19 +35,19 @@ internal_app = FastAPI(
     version="2.0.0"
 )
 
-def get_memory_manager(db: Session = Depends(get_db)) -> HierarchicalMemoryManager:
+def get_memory_manager(db: Session = Depends(get_db)) -> MemoryManager:
     """Dependency to get hierarchical memory manager instance"""
     embedding_service = EmbeddingService(
         api_url=settings.EMBEDDINGS_API_URL,
         model=settings.EMBEDDING_MODEL,
         dimension=int(settings.EMBEDDING_DIMENSION)
     )
-    return HierarchicalMemoryManager(db, embedding_service)
+    return MemoryManager(db, embedding_service)
 
 @internal_app.post("/entities", response_model=List[Dict[str, Any]])
 async def create_entities_internal(
     request: CreateEntitiesRequest,
-    memory_manager: HierarchicalMemoryManager = Depends(get_memory_manager)
+    memory_manager: MemoryManager = Depends(get_memory_manager)
 ):
     """Create multiple entities - internal high-speed endpoint"""
     try:
@@ -65,7 +65,7 @@ async def create_entities_internal(
 @internal_app.post("/relations", response_model=List[Dict[str, Any]]) 
 async def create_relations_internal(
     request: CreateRelationsRequest,
-    memory_manager: HierarchicalMemoryManager = Depends(get_memory_manager)
+    memory_manager: MemoryManager = Depends(get_memory_manager)
 ):
     """Create relationships between entities"""
     try:
@@ -83,7 +83,7 @@ async def create_relations_internal(
 @internal_app.post("/observations", response_model=List[Dict[str, Any]])
 async def add_observations_internal(
     request: AddObservationsRequest,
-    memory_manager: HierarchicalMemoryManager = Depends(get_memory_manager)
+    memory_manager: MemoryManager = Depends(get_memory_manager)
 ):
     """Add observations to existing entities"""
     try:
@@ -103,7 +103,7 @@ async def add_observations_internal(
 @internal_app.post("/search", response_model=List[Dict[str, Any]])
 async def search_nodes_internal(
     request: SearchRequest,
-    memory_manager: HierarchicalMemoryManager = Depends(get_memory_manager),
+    memory_manager: MemoryManager = Depends(get_memory_manager),
     include_hierarchy: bool = Query(False, description="Enable hierarchical memory access")
 ):
     """
@@ -132,7 +132,7 @@ async def search_nodes_internal(
 @internal_app.post("/hierarchical-search", response_model=List[Dict[str, Any]])
 async def search_hierarchical_memories(
     request: SearchRequest,
-    memory_manager: HierarchicalMemoryManager = Depends(get_memory_manager),
+    memory_manager: MemoryManager = Depends(get_memory_manager),
     include_synth_class: bool = Query(True, description="Include synth_class memories"),
     include_client: bool = Query(False, description="Include client-level memories")
 ):
@@ -161,7 +161,7 @@ async def search_hierarchical_memories(
 @internal_app.post("/get-entities", response_model=List[Dict[str, Any]])
 async def get_entities_internal(
     request: GetEntitiesRequest,
-    memory_manager: HierarchicalMemoryManager = Depends(get_memory_manager),
+    memory_manager: MemoryManager = Depends(get_memory_manager),
     include_hierarchy: bool = Query(False, description="Enable hierarchical memory access")
 ):
     """Get specific entities by name with optional hierarchy support"""
@@ -192,7 +192,7 @@ async def get_entities_internal(
 @internal_app.post("/cross-context-access", response_model=List[Dict[str, Any]])
 async def access_cross_context_memories(
     request: CrossContextAccessRequest,
-    memory_manager: HierarchicalMemoryManager = Depends(get_memory_manager)
+    memory_manager: MemoryManager = Depends(get_memory_manager)
 ):
     """
     Explicitly access memories from a different actor context.
@@ -220,7 +220,7 @@ async def access_cross_context_memories(
 
 @internal_app.get("/cache-stats")
 async def get_cache_statistics(
-    memory_manager: HierarchicalMemoryManager = Depends(get_memory_manager)
+    memory_manager: MemoryManager = Depends(get_memory_manager)
 ):
     """Get cache statistics for monitoring performance"""
     return {
@@ -232,7 +232,7 @@ async def get_cache_statistics(
 @internal_app.post("/cache-invalidate")
 async def invalidate_cache(
     actor_id: Optional[UUID] = None,
-    memory_manager: HierarchicalMemoryManager = Depends(get_memory_manager)
+    memory_manager: MemoryManager = Depends(get_memory_manager)
 ):
     """Invalidate cache entries"""
     memory_manager.invalidate_cache(actor_id)

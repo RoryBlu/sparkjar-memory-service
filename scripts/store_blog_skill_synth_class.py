@@ -941,8 +941,8 @@ async def verify_skill_access(synth_id: UUID):
     )
     
     # Use HierarchicalMemoryManager for verification
-    from services.memory_manager_hierarchical import HierarchicalMemoryManager
-    manager = HierarchicalMemoryManager(db, embedding_service)
+    from services.memory_manager import MemoryManager
+    manager = MemoryManager(db, embedding_service)
     
     logger.info(f"\n🔍 Verifying skill access for synth {synth_id}")
     logger.info("   (Synth should inherit from synth_class 24)")
