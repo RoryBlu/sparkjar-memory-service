@@ -6,8 +6,6 @@
 # tests/test_api_endpoints.py
 import pytest
 from fastapi.testclient import TestClient
-import sys
-import os
 from uuid import uuid4
 import jwt
 from datetime import datetime, timedelta
@@ -144,6 +142,42 @@ class TestInternalAPI:
         result = response.json()
         assert result[0]["addedObservations"] == 1
         assert result[0]["totalObservations"] == 2
+
+    def test_list_schemas(self, client, monkeypatch):
+        """Test listing of object schemas."""
+
+        class FakeResult:
+            def scalars(self):
+                class Arr:
+                    def all(self_inner):
+                        from datetime import datetime
+
+                        class Obj:
+                            id = 1
+                            name = "demo"
+                            object_type = "memory"
+                            schema = {}
+                            created_at = datetime.utcnow()
+
+                        return [Obj()]
+
+                return Arr()
+
+        class FakeSession:
+            async def execute(self, *args, **kwargs):
+                return FakeResult()
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, exc_type, exc, tb):
+                pass
+
+        monkeypatch.setattr(internal_api, "get_pooled_session", lambda: FakeSession())
+
+        resp = client.get("/schemas")
+        assert resp.status_code == 200
+        assert isinstance(resp.json(), list)
 
 class TestExternalAPI:
     """Test external API endpoints with authentication"""
