@@ -11,6 +11,9 @@ from sqlalchemy import and_, or_, text, func
 from datetime import datetime
 import json
 import numpy as np
+import logging
+
+from .actor_validator import ActorValidator, InvalidActorError
 
 from sparkjar_crew.shared.database.models import MemoryEntities, MemoryRelations, ObjectSchemas, MemoryObservations
 from sparkjar_crew.shared.schemas.memory_schemas import EntityCreate, RelationCreate, ObservationAdd
@@ -19,10 +22,30 @@ import jsonschema
 from jsonschema import validate, ValidationError
 
 class MemoryManager:
-    def __init__(self, db_session: Session, embedding_service: EmbeddingService):
+    def __init__(
+        self,
+        db_session: Session,
+        embedding_service: EmbeddingService,
+        actor_validator: Optional[ActorValidator] = None,
+    ) -> None:
         self.db = db_session
         self.embedding_service = embedding_service
-        self._schema_cache = {}  # Cache schemas for performance
+        self.actor_validator = actor_validator
+        self._schema_cache: Dict[str, Any] = {}
+        self._synth_class_cache: Dict[str, Any] = {}
+        self._cache_ttl = 300
+        self._cache_timestamps: Dict[str, float] = {}
+
+    async def _validate_actor(self, actor_type: str, actor_id: UUID) -> None:
+        """Validate actor reference if a validator is configured."""
+        if self.actor_validator:
+            is_valid = await self.actor_validator.validate_actor(actor_type, actor_id)
+            if not is_valid:
+                raise InvalidActorError(
+                    actor_type=actor_type,
+                    actor_id=actor_id,
+                    message=f"Actor {actor_id} of type {actor_type} does not exist",
+                )
 
     def _get_base_filter(self, client_id: UUID, actor_type: str, actor_id: UUID):
         """Base filter for multi-tenant + actor scoping"""
@@ -57,6 +80,160 @@ class MemoryManager:
         
         # Return None to indicate schema not found
         return None
+
+    def _get_synth_class_id(self, actor_type: str, actor_id: UUID) -> Optional[int]:
+        """Get cached synth_class_id for a synth actor."""
+        if actor_type != "synth":
+            return None
+
+        cache_key = f"synth_class:{actor_id}"
+        if cache_key in self._synth_class_cache:
+            ts = self._cache_timestamps.get(cache_key, 0)
+            if (datetime.utcnow().timestamp() - ts) < self._cache_ttl:
+                return self._synth_class_cache[cache_key]
+
+        try:
+            from services.crew_api.src.database.models import Synths
+
+            synth = self.db.query(Synths).filter(Synths.id == actor_id).first()
+            if synth and synth.synth_classes_id:
+                self._synth_class_cache[cache_key] = synth.synth_classes_id
+                self._cache_timestamps[cache_key] = datetime.utcnow().timestamp()
+                return synth.synth_classes_id
+        except Exception as exc:  # pragma: no cover - external optional dep
+            logging.getLogger(__name__).error("Error fetching synth class", exc_info=exc)
+
+        return None
+
+    def _get_synth_skill_modules(self, actor_type: str, actor_id: UUID) -> List[UUID]:
+        """Return IDs of skill modules a synth is subscribed to."""
+        if actor_type != "synth":
+            return []
+
+        cache_key = f"skill_modules:{actor_id}"
+        if cache_key in self._synth_class_cache:
+            ts = self._cache_timestamps.get(cache_key, 0)
+            if (datetime.utcnow().timestamp() - ts) < self._cache_ttl:
+                return self._synth_class_cache[cache_key]
+
+        try:
+            from sparkjar_crew.shared.database.models import SynthSkillSubscriptions
+
+            subs = (
+                self.db.query(SynthSkillSubscriptions)
+                .filter(SynthSkillSubscriptions.synth_id == actor_id, SynthSkillSubscriptions.active == True)
+                .all()
+            )
+            ids = [sub.skill_module_id for sub in subs]
+            self._synth_class_cache[cache_key] = ids
+            self._cache_timestamps[cache_key] = datetime.utcnow().timestamp()
+            return ids
+        except Exception as exc:  # pragma: no cover
+            logging.getLogger(__name__).error("Error fetching skill modules", exc_info=exc)
+            return []
+
+    def _build_hierarchical_filter(
+        self,
+        client_id: UUID,
+        actor_type: str,
+        actor_id: UUID,
+        include_synth_class: bool = True,
+        include_client: bool = False,
+        include_skill_module: bool = True,
+    ):
+        filters = [
+            and_(
+                MemoryEntities.client_id == client_id,
+                MemoryEntities.actor_type == actor_type,
+                MemoryEntities.actor_id == actor_id,
+                MemoryEntities.deleted_at.is_(None),
+            )
+        ]
+
+        if actor_type == "synth" and include_synth_class:
+            synth_class_id = self._get_synth_class_id(actor_type, actor_id)
+            if synth_class_id:
+                filters.append(
+                    and_(
+                        MemoryEntities.actor_type == "synth_class",
+                        MemoryEntities.actor_id == str(synth_class_id),
+                        MemoryEntities.deleted_at.is_(None),
+                    )
+                )
+
+        if actor_type == "synth" and include_skill_module:
+            module_ids = self._get_synth_skill_modules(actor_type, actor_id)
+            for mid in module_ids:
+                filters.append(
+                    and_(
+                        MemoryEntities.client_id == client_id,
+                        MemoryEntities.actor_type == "skill_module",
+                        MemoryEntities.actor_id == str(mid),
+                        MemoryEntities.deleted_at.is_(None),
+                    )
+                )
+
+        if include_client:
+            filters.append(
+                and_(
+                    MemoryEntities.client_id == client_id,
+                    MemoryEntities.actor_type == "client",
+                    MemoryEntities.actor_id == str(client_id),
+                    MemoryEntities.deleted_at.is_(None),
+                )
+            )
+
+        return filters[0] if len(filters) == 1 else or_(*filters)
+
+    async def search_hierarchical_memories(
+        self,
+        client_id: UUID,
+        actor_type: str,
+        actor_id: UUID,
+        query: str,
+        entity_types: Optional[List[str]] = None,
+        include_synth_class: bool = True,
+        include_client: bool = False,
+        include_skill_module: bool = True,
+        limit: int = 10,
+        min_confidence: float = 0.0,
+    ) -> List[Dict[str, Any]]:
+        query_embedding = await self.embedding_service.generate_embedding(query)
+        embedding_str = "[" + ",".join(map(str, query_embedding)) + "]"
+
+        hierarchical_filter = self._build_hierarchical_filter(
+            client_id,
+            actor_type,
+            actor_id,
+            include_synth_class=include_synth_class,
+            include_client=include_client,
+            include_skill_module=include_skill_module,
+        )
+
+        base_query = (
+            self.db.query(
+                MemoryEntities,
+                (1 - func.cosine_distance(MemoryEntities.embedding, embedding_str)).label("similarity"),
+                MemoryEntities.actor_type.label("access_context"),
+            )
+            .filter(hierarchical_filter)
+        )
+
+        if entity_types:
+            base_query = base_query.filter(MemoryEntities.entity_type.in_(entity_types))
+
+        results = base_query.order_by(func.cosine_distance(MemoryEntities.embedding, embedding_str)).all()
+
+        formatted_results = []
+        for entity, similarity, access_context in results:
+            if similarity is not None and float(similarity) < min_confidence:
+                continue
+            entity_dict = self._entity_to_dict(entity)
+            entity_dict["similarity"] = float(similarity)
+            entity_dict["access_context"] = access_context
+            formatted_results.append(entity_dict)
+
+        return formatted_results[:limit]
 
     def _validate_observations(self, observations: List[Dict[str, Any]], entity_type: str) -> List[Dict[str, Any]]:
         """Validate observations against schemas from object_schemas table"""
@@ -185,13 +362,14 @@ class MemoryManager:
             }
 
     async def create_entities(
-        self, 
+        self,
         # client_id removed - use actor_id when actor_type="client"
-        actor_type: str, 
-        actor_id: UUID, 
+        actor_type: str,
+        actor_id: UUID,
         entities: List[EntityCreate]
     ) -> List[Dict[str, Any]]:
         """Create multiple entities with automatic embedding generation"""
+        await self._validate_actor(actor_type, actor_id)
         created_entities = []
         
         for entity_data in entities:
@@ -315,11 +493,12 @@ class MemoryManager:
     async def create_relations(
         self,
         # client_id removed - use actor_id when actor_type="client"
-        actor_type: str, 
+        actor_type: str,
         actor_id: UUID,
         relations: List[RelationCreate]
     ) -> List[Dict[str, Any]]:
         """Create relationships between entities"""
+        await self._validate_actor(actor_type, actor_id)
         created_relations = []
         
         for relation_data in relations:
@@ -391,6 +570,7 @@ class MemoryManager:
         observations: List[ObservationAdd]
     ) -> List[Dict[str, Any]]:
         """Add observations to existing entities and regenerate embeddings"""
+        await self._validate_actor(actor_type, actor_id)
         results = []
         
         for obs_data in observations:
@@ -481,9 +661,22 @@ class MemoryManager:
         actor_id: UUID,
         query: str,
         entity_types: Optional[List[str]] = None,
-        limit: int = 10
+        limit: int = 10,
+        min_confidence: float = 0.0,
+        include_hierarchy: bool = False,
     ) -> List[Dict[str, Any]]:
-        """Semantic search using vector embeddings"""
+        """Semantic search using vector embeddings with optional hierarchy."""
+
+        if include_hierarchy:
+            return await self.search_hierarchical_memories(
+                client_id,
+                actor_type,
+                actor_id,
+                query,
+                entity_types=entity_types,
+                limit=limit,
+                min_confidence=min_confidence,
+            )
         
         # Generate query embedding
         query_embedding = await self.embedding_service.generate_embedding(query)
@@ -503,19 +696,19 @@ class MemoryManager:
         if entity_types:
             base_query = base_query.filter(MemoryEntities.entity_type.in_(entity_types))
         
-        # Order by similarity
         results = base_query.order_by(
             func.cosine_distance(MemoryEntities.embedding, embedding_str)
-        ).limit(limit).all()
-        
-        # Format results
+        ).all()
+
         formatted_results = []
         for entity, similarity in results:
+            if similarity is not None and float(similarity) < min_confidence:
+                continue
             entity_dict = self._entity_to_dict(entity)
-            entity_dict['similarity'] = float(similarity)
+            entity_dict["similarity"] = float(similarity)
             formatted_results.append(entity_dict)
-        
-        return formatted_results
+
+        return formatted_results[:limit]
     
     async def open_nodes(
         self,

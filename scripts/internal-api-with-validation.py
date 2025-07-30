@@ -17,7 +17,7 @@ import logging
 # Add shared path for schemas
 
 from database import get_db, get_async_db
-from services.memory_manager_with_validation import MemoryManager
+from services.memory_manager import MemoryManager
 from services.embeddings import EmbeddingService
 from services.actor_validator import ActorValidator, InvalidActorError
 from sparkjar_crew.shared.schemas.memory_schemas import *
