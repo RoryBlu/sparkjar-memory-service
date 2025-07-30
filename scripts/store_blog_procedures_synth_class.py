@@ -22,7 +22,7 @@ import argparse
 # Add parent directory to path
 
 from database import get_db
-from services.memory_manager_hierarchical import HierarchicalMemoryManager
+from services.memory_manager import MemoryManager
 from services.embeddings import EmbeddingService
 from sparkjar_crew.shared.schemas.memory_schemas import EntityCreate, ObservationCreate, RelationCreate
 from config import settings
@@ -40,7 +40,7 @@ async def store_blog_writing_knowledge(client_id: UUID, synth_class_id: int = 24
         dimension=int(settings.EMBEDDING_DIMENSION)
     )
     
-    manager = HierarchicalMemoryManager(db, embedding_service)
+    manager = MemoryManager(db, embedding_service)
     
     logger.info(f"🚀 Storing blog writing knowledge for synth_class {synth_class_id}")
     logger.info(f"   Client ID: {client_id}")
@@ -675,7 +675,7 @@ async def verify_blog_knowledge(client_id: UUID, synth_id: UUID, synth_class_id:
         dimension=int(settings.EMBEDDING_DIMENSION)
     )
     
-    manager = HierarchicalMemoryManager(db, embedding_service)
+    manager = MemoryManager(db, embedding_service)
     
     logger.info(f"\n🔍 Verifying blog knowledge access for synth {synth_id}")
     

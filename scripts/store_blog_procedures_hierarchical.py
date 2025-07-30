@@ -23,7 +23,7 @@ from datetime import datetime
 # Add parent directory to path
 
 from database import get_db
-from services.memory_manager_hierarchical import HierarchicalMemoryManager
+from services.memory_manager import MemoryManager
 from services.embeddings import EmbeddingService
 from sparkjar_crew.shared.schemas.memory_schemas import EntityCreate, ObservationCreate, RelationCreate
 from config import settings
@@ -41,7 +41,7 @@ async def store_blog_procedures(client_id: UUID, synth_class_id: int = 24):
         dimension=int(settings.EMBEDDING_DIMENSION)
     )
     
-    manager = HierarchicalMemoryManager(db, embedding_service)
+    manager = MemoryManager(db, embedding_service)
     
     logger.info(f"🚀 Storing blog procedures for synth_class {synth_class_id}")
     
