@@ -29,6 +29,11 @@ cp .env.example .env
 uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8001
 ```
 
+## Documentation
+
+- [Full Documentation](docs/README.md)
+- [API Reference](docs/api-reference.md)
+
 ## API Endpoints
 
 ### Entity Management
@@ -61,6 +66,16 @@ client (organization)
           └── synth (individual instance)
               └── human (user)
 ```
+## Contextual Realms
+
+Every memory exists in one of four realms:
+1. **CLIENT** - organization-wide policies
+2. **SYNTH_CLASS** - professional identity
+3. **SKILL_MODULE** - tool knowledge
+4. **SYNTH** - individual experiences
+
+A synth inherits from its `synth_class` and subscribes to `skill_module` knowledge while respecting `client` overrides. See the [Memory System Master Guide](docs/MEMORY_SYSTEM_MASTER_GUIDE.md) for more details.
+
 
 ## Environment Variables
 
@@ -92,6 +107,7 @@ isort src/ tests/
 # Type checking
 mypy src/
 ```
+Run `pytest` to execute tests, format code with `black` and `isort`, and run `mypy` for type checking.
 
 ## Docker
 
