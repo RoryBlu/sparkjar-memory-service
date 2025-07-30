@@ -1,0 +1,29 @@
+# Railway-specific Dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements
+COPY requirements-railway.txt .
+RUN pip install --no-cache-dir -r requirements-railway.txt
+
+# Copy all service files
+COPY . /app/
+
+# Set Python path
+ENV PYTHONPATH=/app:$PYTHONPATH
+
+# Create necessary directories
+RUN mkdir -p /app/logs
+
+# Use the PORT environment variable from Railway
+ENV PORT=${PORT:-8443}
+
+# Start with main.py
+CMD ["python3", "main.py"]
