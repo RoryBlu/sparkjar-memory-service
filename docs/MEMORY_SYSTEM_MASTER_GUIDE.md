@@ -324,6 +324,24 @@ Creates entity with relationships and observations in one transaction:
 }
 ```
 
+Example using `skill_module_metadata`:
+
+```json
+{
+  "actor_type": "skill_module",
+  "actor_id": "image_tools",
+  "entity": {
+    "name": "background_removal",
+    "type": "integration",
+    "metadata": {
+      "module_name": "image_tools",
+      "instruction_set": "remove_background",
+      "version": "1.0"
+    }
+  }
+}
+```
+
 #### 2. Search Across Realms
 `POST /memory/search/realms`
 
