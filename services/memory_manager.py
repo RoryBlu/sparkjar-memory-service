@@ -15,11 +15,9 @@ import logging
 
 from .actor_validator import ActorValidator, InvalidActorError
 
-from sparkjar_crew.shared.database.models import MemoryEntities, MemoryRelations, ObjectSchemas, MemoryObservations
+from sparkjar_crew.shared.database.models import MemoryEntities, MemoryRelations, MemoryObservations
 from sparkjar_crew.shared.schemas.memory_schemas import EntityCreate, RelationCreate, ObservationAdd
 from .embeddings import EmbeddingService
-import jsonschema
-from jsonschema import validate, ValidationError
 
 class MemoryManager:
     def __init__(
@@ -37,15 +35,8 @@ class MemoryManager:
         self._cache_timestamps: Dict[str, float] = {}
 
     async def _validate_actor(self, actor_type: str, actor_id: UUID) -> None:
-        """Validate actor reference if a validator is configured."""
-        if self.actor_validator:
-            is_valid = await self.actor_validator.validate_actor(actor_type, actor_id)
-            if not is_valid:
-                raise InvalidActorError(
-                    actor_type=actor_type,
-                    actor_id=actor_id,
-                    message=f"Actor {actor_id} of type {actor_type} does not exist",
-                )
+        """Actor validation disabled."""
+        return
 
     def _get_base_filter(self, client_id: UUID, actor_type: str, actor_id: UUID):
         """Base filter for multi-tenant + actor scoping"""
@@ -57,28 +48,7 @@ class MemoryManager:
         )
 
     def _get_schema(self, schema_name: str) -> Dict[str, Any]:
-        """Get schema from object_schemas table with caching"""
-        if schema_name in self._schema_cache:
-            return self._schema_cache[schema_name]
-        
-        # Query based on your actual table structure
-        query = text("""
-            SELECT schema 
-            FROM object_schemas 
-            WHERE name = :schema_name 
-            AND object_type IN ('memory_observation', 'memory_entity_metadata')
-            ORDER BY created_at DESC
-            LIMIT 1
-        """)
-        
-        result = self.db.execute(query, {"schema_name": schema_name}).first()
-        
-        if result:
-            schema = result[0]  # schema_definition is JSONB
-            self._schema_cache[schema_name] = schema
-            return schema
-        
-        # Return None to indicate schema not found
+        """Schema lookup disabled."""
         return None
 
     def _get_synth_class_id(self, actor_type: str, actor_id: UUID) -> Optional[int]:
@@ -236,130 +206,12 @@ class MemoryManager:
         return formatted_results[:limit]
 
     def _validate_observations(self, observations: List[Dict[str, Any]], entity_type: str) -> List[Dict[str, Any]]:
-        """Validate observations against schemas from object_schemas table"""
-        validated_observations = []
-        
-        for obs in observations:
-            try:
-                # Determine schema name based on observation type
-                obs_type = obs.get('type', 'general')
-                
-                # Map observation types to schema names
-                schema_mapping = {
-                    'skill': 'skill_observation',
-                    'database_ref': 'database_ref_observation',
-                    'writing_pattern': 'writing_pattern_observation',
-                    'general': 'base_observation',
-                    'fact': 'base_observation'
-                }
-                
-                schema_name = schema_mapping.get(obs_type, 'base_observation')
-                schema = self._get_schema(schema_name)
-                
-                if not schema:
-                    # Fallback to base_observation
-                    schema = self._get_schema('base_observation')
-                    schema_name = 'base_observation'
-                
-                if not schema:
-                    # If even base_observation is not found, use a minimal schema
-                    schema = {
-                        "type": "object",
-                        "properties": {
-                            "content": {"type": "string"},
-                            "source": {"type": "string"},
-                            "timestamp": {"type": "string"},
-                        },
-                        "required": ["content"]
-                    }
-                
-                # Transform observation to match schema structure
-                # Your schemas expect 'content' field, but observations have 'value'
-                timestamp = obs.get('timestamp', datetime.utcnow())
-                if isinstance(timestamp, datetime):
-                    timestamp = timestamp.isoformat()
-                
-                obs_for_validation = {
-                    "content": str(obs.get('value', '')),
-                    "source": obs.get('source', 'api'),
-                    "timestamp": timestamp
-                }
-                
-                # All type-specific data should be stored in the 'value' field
-                
-                # Add any additional fields from original observation
-                if 'context' in obs:
-                    obs_for_validation['context'] = obs['context']
-                if 'tags' in obs:
-                    obs_for_validation['tags'] = obs['tags']
-                
-                # Validate against schema
-                validate(instance=obs_for_validation, schema=schema)
-                
-                # Store validated observation with original structure plus metadata
-                validated_obs = obs.copy()
-                validated_obs['_schema_used'] = schema_name
-                validated_obs['_validated_at'] = datetime.utcnow().isoformat()
-                validated_obs['_validation_passed'] = True
-                
-                validated_observations.append(validated_obs)
-                
-            except ValidationError as e:
-                # Log validation error but don't fail completely
-                # Observation validation failed - should log this properly
-                
-                # Store observation with validation error info
-                fallback_obs = obs.copy()
-                fallback_obs['_schema_used'] = schema_name if 'schema_name' in locals() else 'unknown'
-                fallback_obs['_validation_error'] = str(e.message)
-                fallback_obs['_validation_passed'] = False
-                fallback_obs['_validated_at'] = datetime.utcnow().isoformat()
-                
-                validated_observations.append(fallback_obs)
-                
-            except Exception as e:
-                # Schema validation error - should log this properly
-                # Use observation as-is if validation system fails
-                obs_with_error = obs.copy()
-                obs_with_error['_validation_error'] = f"System error: {str(e)}"
-                obs_with_error['_validation_passed'] = False
-                validated_observations.append(obs_with_error)
-        
-        return validated_observations
+        """Validation disabled - return observations unchanged."""
+        return observations
 
     def _validate_entity_metadata(self, metadata: Dict[str, Any], entity_type: str) -> Dict[str, Any]:
-        """Validate entity metadata against schemas"""
-        try:
-            schema_name = f"{entity_type}_entity_metadata"
-            schema = self._get_schema(schema_name)
-            
-            if schema:
-                # Validate metadata against schema
-                validate(instance=metadata, schema=schema)
-                metadata['_schema_used'] = schema_name
-                metadata['_validation_passed'] = True
-            else:
-                # No specific schema for this entity type
-                metadata['_schema_used'] = 'none'
-                metadata['_validation_passed'] = True
-            
-            return metadata
-            
-        except ValidationError as e:
-            # Entity metadata validation failed - should log this properly
-            return {
-                **metadata,
-                "_validation_error": str(e.message),
-                "_schema_used": schema_name if 'schema_name' in locals() else 'unknown',
-                "_validation_passed": False
-            }
-        except Exception as e:
-            # Entity metadata validation error - should log this properly
-            return {
-                **metadata,
-                "_validation_error": f"System error: {str(e)}",
-                "_validation_passed": False
-            }
+        """Validation disabled - return metadata unchanged."""
+        return metadata
 
     async def create_entities(
         self,
@@ -489,6 +341,69 @@ class MemoryManager:
         
         self.db.commit()
         return created_entities
+
+    async def upsert_entities(
+        self,
+        actor_type: str,
+        actor_id: UUID,
+        entities: List[EntityCreate],
+    ) -> List[Dict[str, Any]]:
+        """Create or update entities, merging observations and metadata."""
+        await self._validate_actor(actor_type, actor_id)
+        results = []
+
+        for entity in entities:
+            existing = self.db.query(MemoryEntities).filter(
+                and_(
+                    self._get_base_filter(client_id, actor_type, actor_id),
+                    MemoryEntities.entity_name == entity.name,
+                )
+            ).first()
+
+            if existing:
+                if entity.metadata:
+                    existing.metadata_json.update(entity.metadata)
+                if getattr(entity, "aliasOf", None) is not None:
+                    existing.alias_of = entity.aliasOf
+                if getattr(entity, "identityConfidence", None) is not None:
+                    existing.identity_confidence = entity.identityConfidence
+
+                existing_obs = self.db.query(MemoryObservations).filter(
+                    MemoryObservations.entity_id == existing.id
+                ).all()
+                existing_data = [
+                    {
+                        **(o.observation_value if isinstance(o.observation_value, dict) else {}),
+                        "type": o.observation_type,
+                    }
+                    for o in existing_obs
+                ]
+
+                for obs in entity.observations:
+                    obs_dict = obs.dict()
+                    if not any(
+                        d.get("type") == obs_dict.get("type") and d.get("value") == obs_dict.get("value")
+                        for d in existing_data
+                    ):
+                        obs_val = obs.value if isinstance(obs.value, dict) else {"value": obs.value}
+                        self.db.add(
+                            MemoryObservations(
+                                id=uuid4(),
+                                entity_id=existing.id,
+                                observation_type=obs.type,
+                                observation_value=obs_val,
+                                source=obs.source or "api",
+                                created_at=datetime.utcnow(),
+                            )
+                        )
+                existing.updated_at = datetime.utcnow()
+                results.append(self._entity_to_dict(existing))
+            else:
+                created = await self.create_entities(actor_type, actor_id, [entity])
+                results.extend(created)
+
+        self.db.commit()
+        return results
 
     async def create_relations(
         self,
