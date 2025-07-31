@@ -9,6 +9,7 @@ Welcome to the SparkJAR Memory System documentation. This system provides hierar
 - **[API Reference](./api-reference.md)** - All endpoints with examples
 - **[Access Patterns](./access-patterns.md)** - Best practices for crews
 - **[Implementation Summary](./implementation-summary.md)** - Current state and validation results
+- **[CoD Workflow](./COD_WORKFLOW.md)** - Zero-vector embeddings and new ingestion steps
 - **[Entity Structure](./entity-structure.md)** - Entity naming and type conventions
 
 ### Additional Resources
