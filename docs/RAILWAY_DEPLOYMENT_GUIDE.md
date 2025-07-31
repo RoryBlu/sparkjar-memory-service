@@ -32,8 +32,8 @@ You'll need to create **two separate Railway services** for the memory system:
 3. Choose your repository
 4. Configure the service:
    - **Service Name**: `memory-internal`
-   - **Root Directory**: `/services/memory-service`
-   - **Start Command**: `hypercorn internal-api:internal_app --bind [::]:8001`
+   - **Root Directory**: `/`
+   - **Start Command**: `hypercorn internal_api:internal_app --bind [::]:8001`
    - **Port**: `8001`
 
 #### B. External Memory API Service
@@ -42,8 +42,8 @@ You'll need to create **two separate Railway services** for the memory system:
 2. Select the same repository
 3. Configure the service:
    - **Service Name**: `memory-external`
-   - **Root Directory**: `/services/memory-service`
-   - **Start Command**: `hypercorn external-api:external_app --bind 0.0.0.0:8443`
+   - **Root Directory**: `/`
+   - **Start Command**: `hypercorn external_api:external_app --bind 0.0.0.0:8443`
    - **Port**: `8443`
 
 ### Step 2: Configure Environment Variables
