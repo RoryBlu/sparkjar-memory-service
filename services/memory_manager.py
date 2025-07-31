@@ -18,6 +18,7 @@ from .actor_validator import ActorValidator, InvalidActorError
 from sparkjar_crew.shared.database.models import MemoryEntities, MemoryRelations, ObjectSchemas, MemoryObservations
 from sparkjar_crew.shared.schemas.memory_schemas import EntityCreate, RelationCreate, ObservationAdd
 from .embeddings import EmbeddingService
+from .summarizer import apply_draft_summaries
 import jsonschema
 from jsonschema import validate, ValidationError
 
@@ -391,7 +392,9 @@ class MemoryManager:
                 
                 # Create new observations
                 for obs in entity_data.observations:
-                    obs_value = obs.value if isinstance(obs.value, dict) else {"value": obs.value}
+                    obs_dict = obs.model_dump()
+                    apply_draft_summaries([obs_dict])
+                    obs_value = obs_dict["value"] if isinstance(obs_dict["value"], dict) else {"value": obs_dict["value"]}
                     for key, value in obs_value.items():
                         if isinstance(value, datetime):
                             obs_value[key] = value.isoformat()
@@ -416,6 +419,7 @@ class MemoryManager:
                 
                 for obs in entity_data.observations:
                     obs_dict = obs.dict()
+                    apply_draft_summaries([obs_dict])
                     all_observations.append(obs_dict)
                 
                 text_content = self.embedding_service.prepare_entity_text_from_data(
@@ -433,6 +437,7 @@ class MemoryManager:
             
             # Create new entity
             observations = [obs.model_dump() for obs in entity_data.observations]
+            apply_draft_summaries(observations)
             
             # Validate observations against schemas
             validated_observations = self._validate_observations(observations, entity_data.entityType)
@@ -606,7 +611,7 @@ class MemoryManager:
                 obs_dict = obs.dict()
                 # Check for duplicate observations
                 if not any(
-                    existing.get('type') == obs_dict.get('type') and 
+                    existing.get('type') == obs_dict.get('type') and
                     existing.get('value') == obs_dict.get('value')
                     for existing in existing_obs_list
                 ):
@@ -614,6 +619,7 @@ class MemoryManager:
             
             # Validate and create new observations
             if new_obs:
+                apply_draft_summaries(new_obs)
                 validated_new_obs = self._validate_observations(new_obs, entity.entity_type)
                 for obs in validated_new_obs:
                     # Create new observation record
