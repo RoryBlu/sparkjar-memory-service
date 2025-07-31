@@ -48,10 +48,10 @@ class MemoryManager:
                     message=f"Actor {actor_id} of type {actor_type} does not exist",
                 )
 
-    def _get_base_filter(self, client_id: UUID, actor_type: str, actor_id: UUID):
+    def _get_base_filter(self, actor_type: str, actor_id: UUID):
         """Base filter for multi-tenant + actor scoping"""
         return and_(
-            MemoryEntities.client_id == client_id,
+            MemoryEntities.client_id == (str(actor_id) if actor_type == "client" else None),
             MemoryEntities.actor_type == actor_type,
             MemoryEntities.actor_id == actor_id,
             MemoryEntities.deleted_at.is_(None)
@@ -364,6 +364,16 @@ class MemoryManager:
                 "_validation_passed": False
             }
 
+    def _five_word_draft(self, text: str) -> str:
+        """Return the first five words from a text string."""
+        return " ".join(text.split()[:5])
+
+    def _extract_facts(self, value: Any) -> List[str]:
+        """Very small helper to treat an observation value as facts."""
+        if isinstance(value, list):
+            return [str(v) for v in value]
+        return [str(value)]
+
     async def create_entities(
         self,
         # client_id removed - use actor_id when actor_type="client"
@@ -371,128 +381,102 @@ class MemoryManager:
         actor_id: UUID,
         entities: List[EntityCreate]
     ) -> List[Dict[str, Any]]:
-        """Create multiple entities with automatic embedding generation"""
+        """Create entities without validation following the new spec."""
         await self._validate_actor(actor_type, actor_id)
         created_entities = []
         
         for entity_data in entities:
-            # Check for existing entity
+            # Upsert entity unique to its actor context
             existing = self.db.query(MemoryEntities).filter(
                 and_(
-                    self._get_base_filter(client_id, actor_type, actor_id),
-                    MemoryEntities.entity_name == entity_data.name
+                    MemoryEntities.actor_type == actor_type,
+                    MemoryEntities.actor_id == actor_id,
+                    MemoryEntities.entity_name == entity_data.name,
+                    MemoryEntities.deleted_at.is_(None),
                 )
             ).first()
-            
-            if existing:
-                # Get existing observations
-                existing_obs = self.db.query(MemoryObservations).filter(
-                    MemoryObservations.entity_id == existing.id
-                ).all()
-                
-                # Create new observations
-                for obs in entity_data.observations:
-                    obs_dict = obs.model_dump()
-                    apply_draft_summaries([obs_dict])
-                    obs_value = obs_dict["value"] if isinstance(obs_dict["value"], dict) else {"value": obs_dict["value"]}
-                    for key, value in obs_value.items():
-                        if isinstance(value, datetime):
-                            obs_value[key] = value.isoformat()
-                    
-                    observation = MemoryObservations(
-                        id=uuid4(),
-                        entity_id=existing.id,
-                        observation_type=obs.type,
-                        observation_value=obs_value,
-                        source=obs.source or 'api',
-                        created_at=datetime.utcnow()
-                    )
-                    self.db.add(observation)
-                
-                # Regenerate embedding
-                all_observations = []
-                for o in existing_obs:
-                    obs_dict = o.observation_value if isinstance(o.observation_value, dict) else {}
-                    obs_dict['type'] = o.observation_type
-                    obs_dict['source'] = o.source
-                    all_observations.append(obs_dict)
-                
-                for obs in entity_data.observations:
-                    obs_dict = obs.dict()
-                    apply_draft_summaries([obs_dict])
-                    all_observations.append(obs_dict)
-                
-                text_content = self.embedding_service.prepare_entity_text_from_data(
-                    entity_data.name, entity_data.entityType, all_observations
-                )
-                existing.embedding = await self.embedding_service.generate_embedding(text_content)
-                existing.updated_at = datetime.utcnow()
-                if getattr(entity_data, "aliasOf", None) is not None:
-                    existing.alias_of = entity_data.aliasOf
-                if getattr(entity_data, "identityConfidence", None) is not None:
-                    existing.identity_confidence = entity_data.identityConfidence
 
-                created_entities.append(self._entity_to_dict(existing))
-                continue
-            
-            # Create new entity
-            observations = [obs.model_dump() for obs in entity_data.observations]
-            apply_draft_summaries(observations)
-            
-            # Validate observations against schemas
-            validated_observations = self._validate_observations(observations, entity_data.entityType)
-            
-            # Validate entity metadata
-            validated_metadata = self._validate_entity_metadata(
-                entity_data.metadata or {}, 
-                entity_data.entityType
-            )
-            
-            # Generate embedding
-            text_content = self.embedding_service.prepare_entity_text_from_data(
-                entity_data.name, entity_data.entityType, validated_observations
-            )
-            embedding = await self.embedding_service.generate_embedding(text_content)
-            
-            # Create entity record
-            entity = MemoryEntities(
-                id=uuid4(),
-                client_id=client_id,
-                actor_type=actor_type,
-                actor_id=actor_id,
-                entity_name=entity_data.name,
-                entity_type=entity_data.entityType,
-                embedding=embedding,
-                metadata_json=validated_metadata,
-                alias_of=getattr(entity_data, "aliasOf", None),
-                identity_confidence=getattr(entity_data, "identityConfidence", None),
-                created_at=datetime.utcnow(),
-                updated_at=datetime.utcnow()
-            )
-            
-            self.db.add(entity)
-            self.db.flush()  # Get the ID
-            
-            # Create observations for the entity
-            if validated_observations:
-                for obs in validated_observations:
-                    # Convert any datetime objects in observation to strings
-                    obs_value = obs.copy()
-                    for key, value in obs_value.items():
-                        if isinstance(value, datetime):
-                            obs_value[key] = value.isoformat()
-                    
+            if existing:
+                main_entity = existing
+                main_entity.updated_at = datetime.utcnow()
+            else:
+                main_entity = MemoryEntities(
+                    id=str(uuid4()),
+                    client_id=str(actor_id) if actor_type == "client" else None,
+                    actor_type=actor_type,
+                    actor_id=actor_id,
+                    entity_name=entity_data.name,
+                    entity_type=entity_data.entityType,
+                    embedding=None,
+                    metadata_json=entity_data.metadata or {},
+                    alias_of=getattr(entity_data, "aliasOf", None),
+                    identity_confidence=getattr(entity_data, "identityConfidence", None),
+                    created_at=datetime.utcnow(),
+                    updated_at=datetime.utcnow(),
+                )
+                self.db.add(main_entity)
+                self.db.flush()
+
+            for obs in entity_data.observations:
+                for fact in self._extract_facts(obs.value):
+                    draft = self._five_word_draft(str(fact))
+
+                    fact_entity = MemoryEntities(
+                        id=str(uuid4()),
+                        client_id=str(actor_id) if actor_type == "client" else None,
+                        actor_type=actor_type,
+                        actor_id=actor_id,
+                        entity_name=draft,
+                        entity_type="fact",
+                        embedding=None,
+                        metadata_json={},
+                        created_at=datetime.utcnow(),
+                        updated_at=datetime.utcnow(),
+                    )
+                    self.db.add(fact_entity)
+                    self.db.flush()
                     observation = MemoryObservations(
-                        id=uuid4(),
-                        entity_id=entity.id,
-                        observation_type=obs.get('type'),
-                        observation_value=obs_value,
-                        source=obs.get('source', 'api'),
-                        created_at=datetime.utcnow()
+                        id=str(uuid4()),
+                        entity_id=fact_entity.id,
+                        observation_type=obs.type,
+                        observation_value={"draft": draft, "fact": str(fact)},
+                        source=obs.source or "api",
+                        created_at=datetime.utcnow(),
                     )
                     self.db.add(observation)
-            
-            created_entities.append(self._entity_to_dict(entity))
+
+                    relation_forward = MemoryRelations(
+                        id=str(uuid4()),
+                        client_id=str(actor_id) if actor_type == "client" else None,
+                        actor_type=actor_type,
+                        actor_id=actor_id,
+                        from_entity_id=main_entity.id,
+                        to_entity_id=fact_entity.id,
+                        from_entity_name=main_entity.entity_name,
+                        to_entity_name=fact_entity.entity_name,
+                        relation_type=obs.type,
+                        metadata_json={},
+                        created_at=datetime.utcnow(),
+                        updated_at=datetime.utcnow(),
+                    )
+                    relation_reverse = MemoryRelations(
+                        id=str(uuid4()),
+                        client_id=str(actor_id) if actor_type == "client" else None,
+                        actor_type=actor_type,
+                        actor_id=actor_id,
+                        from_entity_id=fact_entity.id,
+                        to_entity_id=main_entity.id,
+                        from_entity_name=fact_entity.entity_name,
+                        to_entity_name=main_entity.entity_name,
+                        relation_type=obs.type,
+                        metadata_json={},
+                        created_at=datetime.utcnow(),
+                        updated_at=datetime.utcnow(),
+                    )
+                    self.db.add(relation_forward)
+                    self.db.add(relation_reverse)
+
+            created_entities.append(self._entity_to_dict(main_entity))
         
         self.db.commit()
         return created_entities
@@ -512,7 +496,7 @@ class MemoryManager:
             # Check for existing relation
             existing = self.db.query(MemoryRelations).filter(
                 and_(
-                    MemoryRelations.client_id == client_id,
+                    MemoryRelations.client_id == (str(actor_id) if actor_type == "client" else None),
                     MemoryRelations.actor_type == actor_type,
                     MemoryRelations.actor_id == actor_id,
                     MemoryRelations.from_entity_name == relation_data.from_entity_name,
@@ -533,14 +517,14 @@ class MemoryManager:
             # Verify entities exist
             from_entity = self.db.query(MemoryEntities).filter(
                 and_(
-                    self._get_base_filter(client_id, actor_type, actor_id),
+                    self._get_base_filter(actor_type, actor_id),
                     MemoryEntities.entity_name == relation_data.from_entity_name
                 )
             ).first()
             
             to_entity = self.db.query(MemoryEntities).filter(
                 and_(
-                    self._get_base_filter(client_id, actor_type, actor_id),
+                    self._get_base_filter(actor_type, actor_id),
                     MemoryEntities.entity_name == relation_data.to_entity_name
                 )
             ).first()
@@ -551,7 +535,7 @@ class MemoryManager:
             # Create relation
             relation = MemoryRelations(
                 id=uuid4(),
-                client_id=client_id,
+                client_id=(str(actor_id) if actor_type == "client" else None),
                 actor_type=actor_type,
                 actor_id=actor_id,
                 from_entity_id=from_entity.id,
@@ -583,7 +567,7 @@ class MemoryManager:
         for obs_data in observations:
             entity = self.db.query(MemoryEntities).filter(
                 and_(
-                    self._get_base_filter(client_id, actor_type, actor_id),
+                    self._get_base_filter(actor_type, actor_id),
                     MemoryEntities.entity_name == obs_data.entityName
                 )
             ).first()
@@ -960,7 +944,7 @@ class MemoryManager:
         for participant_name in participants:
             existing = self.db.query(MemoryEntities).filter(
                 and_(
-                    self._get_base_filter(client_id, actor_type, actor_id),
+                    self._get_base_filter(actor_type, actor_id),
                     MemoryEntities.entity_name == participant_name
                 )
             ).first()
@@ -1104,7 +1088,7 @@ class MemoryManager:
         if to_entity:
             to_entity_obj = self.db.query(MemoryEntities).filter(
                 and_(
-                    self._get_base_filter(client_id, actor_type, actor_id),
+                    self._get_base_filter(actor_type, actor_id),
                     MemoryEntities.entity_name == to_entity
                 )
             ).first()
@@ -1508,7 +1492,7 @@ class MemoryManager:
             for term in key_terms:
                 # Use existing search_nodes method
                 search_results = await self.search_nodes(
-                    client_id=client_id,
+                    client_id=(str(actor_id) if actor_type == "client" else None),
                     actor_type=actor_type,
                     actor_id=actor_id,
                     query=term,
@@ -1764,7 +1748,7 @@ OBSERVATIONS:
             try:
                 # Check if entity exists using search
                 search_results = await self.search_nodes(
-                    client_id=client_id,
+                    client_id=(str(actor_id) if actor_type == "client" else None),
                     actor_type=actor_type,
                     actor_id=actor_id,
                     query=entity_data["name"],
