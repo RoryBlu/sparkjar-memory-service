@@ -199,9 +199,6 @@ class MemoryManager:
         limit: int = 10,
         min_confidence: float = 0.0,
     ) -> List[Dict[str, Any]]:
-        query_embedding = await self.embedding_service.generate_embedding(query)
-        embedding_str = "[" + ",".join(map(str, query_embedding)) + "]"
-
         hierarchical_filter = self._build_hierarchical_filter(
             client_id,
             actor_type,
@@ -211,30 +208,35 @@ class MemoryManager:
             include_skill_module=include_skill_module,
         )
 
-        base_query = (
-            self.db.query(
-                MemoryEntities,
-                (1 - func.cosine_distance(MemoryEntities.embedding, embedding_str)).label("similarity"),
-                MemoryEntities.actor_type.label("access_context"),
-            )
-            .filter(hierarchical_filter)
-        )
+        base_query = self.db.query(
+            MemoryEntities,
+            MemoryEntities.actor_type.label("access_context")
+        ).filter(hierarchical_filter)
 
         if entity_types:
             base_query = base_query.filter(MemoryEntities.entity_type.in_(entity_types))
 
-        results = base_query.order_by(func.cosine_distance(MemoryEntities.embedding, embedding_str)).all()
+        entities = base_query.all()
 
-        formatted_results = []
-        for entity, similarity, access_context in results:
-            if similarity is not None and float(similarity) < min_confidence:
+        query_tokens = set(query.lower().split())
+        results = []
+
+        for entity, access_context in entities:
+            draft = self._compile_draft_text(client_id, actor_type, actor_id, entity)
+            text_tokens = set(draft.lower().split())
+            similarity = 0.0
+            if query_tokens:
+                similarity = len(query_tokens & text_tokens) / len(query_tokens)
+            if similarity < min_confidence:
                 continue
             entity_dict = self._entity_to_dict(entity)
-            entity_dict["similarity"] = float(similarity)
+            entity_dict["similarity"] = similarity
             entity_dict["access_context"] = access_context
-            formatted_results.append(entity_dict)
+            entity_dict["draft_text"] = draft
+            results.append(entity_dict)
 
-        return formatted_results[:limit]
+        results.sort(key=lambda r: r["similarity"], reverse=True)
+        return results[:limit]
 
     def _validate_observations(self, observations: List[Dict[str, Any]], entity_type: str) -> List[Dict[str, Any]]:
         """Validate observations against schemas from object_schemas table"""
@@ -671,7 +673,7 @@ class MemoryManager:
         min_confidence: float = 0.0,
         include_hierarchy: bool = False,
     ) -> List[Dict[str, Any]]:
-        """Semantic search using vector embeddings with optional hierarchy."""
+        """Search memories using simple text matching across all tables."""
 
         if include_hierarchy:
             return await self.search_hierarchical_memories(
@@ -683,38 +685,34 @@ class MemoryManager:
                 limit=limit,
                 min_confidence=min_confidence,
             )
-        
-        # Generate query embedding
-        query_embedding = await self.embedding_service.generate_embedding(query)
-        
-        # Convert to SQL array format for pgvector (768 dimensions)
-        embedding_str = "[" + ",".join(map(str, query_embedding)) + "]"
-        
-        # Build query with vector similarity
-        base_query = self.db.query(
-            MemoryEntities,
-            (1 - func.cosine_distance(MemoryEntities.embedding, embedding_str)).label('similarity')
-        ).filter(
+
+        base_query = self.db.query(MemoryEntities).filter(
             self._get_base_filter(client_id, actor_type, actor_id)
         )
-        
-        # Add entity type filter if specified
+
         if entity_types:
             base_query = base_query.filter(MemoryEntities.entity_type.in_(entity_types))
-        
-        results = base_query.order_by(
-            func.cosine_distance(MemoryEntities.embedding, embedding_str)
-        ).all()
 
-        formatted_results = []
-        for entity, similarity in results:
-            if similarity is not None and float(similarity) < min_confidence:
+        entities = base_query.all()
+
+        query_tokens = set(query.lower().split())
+        results = []
+
+        for entity in entities:
+            draft = self._compile_draft_text(client_id, actor_type, actor_id, entity)
+            text_tokens = set(draft.lower().split())
+            similarity = 0.0
+            if query_tokens:
+                similarity = len(query_tokens & text_tokens) / len(query_tokens)
+            if similarity < min_confidence:
                 continue
             entity_dict = self._entity_to_dict(entity)
-            entity_dict["similarity"] = float(similarity)
-            formatted_results.append(entity_dict)
+            entity_dict["similarity"] = similarity
+            entity_dict["draft_text"] = draft
+            results.append(entity_dict)
 
-        return formatted_results[:limit]
+        results.sort(key=lambda r: r["similarity"], reverse=True)
+        return results[:limit]
     
     async def open_nodes(
         self,
@@ -891,6 +889,49 @@ class MemoryManager:
             "metadata": relation.metadata_json or {},
             "created_at": relation.created_at.isoformat() if relation.created_at else None
         }
+
+    def _compile_draft_text(
+        self,
+        client_id: UUID,
+        actor_type: str,
+        actor_id: UUID,
+        entity: MemoryEntities,
+    ) -> str:
+        """Compile a simple text draft from an entity and its related data."""
+
+        parts = [entity.entity_name or ""]
+        if entity.metadata_json:
+            parts.append(json.dumps(entity.metadata_json))
+
+        observations = self.db.query(MemoryObservations).filter(
+            MemoryObservations.entity_id == entity.id
+        ).all()
+        for obs in observations:
+            parts.append(obs.observation_type or "")
+            if obs.observation_value:
+                parts.append(json.dumps(obs.observation_value))
+
+        relations = self.db.query(MemoryRelations).filter(
+            and_(
+                MemoryRelations.client_id == client_id,
+                MemoryRelations.actor_type == actor_type,
+                MemoryRelations.actor_id == actor_id,
+                or_(
+                    MemoryRelations.from_entity_id == entity.id,
+                    MemoryRelations.to_entity_id == entity.id,
+                ),
+                MemoryRelations.deleted_at.is_(None),
+            )
+        ).all()
+
+        for rel in relations:
+            parts.append(rel.relation_type or "")
+            parts.append(rel.from_entity_name or "")
+            parts.append(rel.to_entity_name or "")
+            if rel.metadata_json:
+                parts.append(json.dumps(rel.metadata_json))
+
+        return " ".join(parts)
     
     async def remember_conversation(
         self,
